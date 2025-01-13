@@ -1,45 +1,73 @@
 const express = require("express");
-const bcrypt = require('bcryptjs');
-const { body, validationResult } = require('express-validator');
-const User = require('./models/User'); 
+// const bcrypt = require("bcryptjs");
+// const jwt = require("jsonwebtoken");
+// const User = require("../models/User"); // Assuming you have a User model
 
 const router = express.Router();
 
-router.post(
-  '/signup',
-  [
-    body('email').isEmail().withMessage('Enter a valid email'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+// Sign up
+router.post("/signup", (req, res) => {
+  res.json({ message: "POST Sign up" });
+});
 
-    const { email, password } = req.body;
+// Log in
+router.post("/login", (req, res) => {
+  res.json({ message: "POST Log In" });
+});
 
-    try {
-      // Check if user already exists
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
-      }
+// Log out
+router.post("/logout", (req, res) => {
+  // Handle token invalidation if you're storing tokens server-side or on the client
+  res.json({ message: "Logged out successfully" });
+});
 
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(password, 10);
+// // Sign up
+// router.post("/signup", async (req, res) => {
+//   const { email, password, username } = req.body;
 
-      // Save user to database
-      const newUser = new User({ email, password: hashedPassword });
-      await newUser.save();
+//   try {
+//     const hashedPassword = await bcrypt.hash(password, 10);
 
-      res.status(201).json({ message: 'User created successfully' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).send('Server error');
-    }
-  }
-);
+//     const newUser = new User({ email, password: hashedPassword, username });
+//     await newUser.save();
 
+//     res.status(201).json({ message: "User created" });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// });
+
+// // Log in
+// router.post("/login", async (req, res) => {
+//   const { email, password } = req.body;
+
+//   try {
+//     const user = await User.findOne({ email });
+
+//     if (!user) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+
+//     if (!isMatch) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+//       expiresIn: "1h",
+//     });
+
+//     res.json({ token });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// });
+
+// // Log out
+// router.post("/logout", (req, res) => {
+//   // Handle token invalidation if you're storing tokens server-side or on the client
+//   res.json({ message: "Logged out successfully" });
+// });
 
 module.exports = router;
