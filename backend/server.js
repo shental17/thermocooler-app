@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
 const thermocoolerRoutes = require("./routes/thermoRoutes");
 const profileRoutes = require("./routes/profileRoutes");
-const energyUsageRoutes = require("./routes/energyUsageRoutes");
+const energyRoutes = require("./routes/energyRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
 //Express App
@@ -24,7 +24,7 @@ app.get((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/thermocooler", thermocoolerRoutes);
 app.use("/api/profile", profileRoutes);
-app.use("/api/energy", energyUsageRoutes);
+app.use("/api/energy", energyRoutes);
 app.use("/api/admin", adminRoutes);
 
 // app.listen(process.env.PORT, () =>

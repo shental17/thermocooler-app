@@ -1,9 +1,11 @@
 const express = require("express");
+const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
+//require auth for all admin function
+router.use(requireAuth);
 // Roles - Admin
-
 // GET all users
 router.get("/", (req, res) => {
   res.json({ message: "GET all users" });
@@ -11,7 +13,7 @@ router.get("/", (req, res) => {
 
 // SET water pump voltage
 router.patch("/:id/water-pump", (req, res) => {
-  res.json({ message: "SET water pump" });
+  res.json({ message: "UPDATE water pump" });
 });
 
 // SET internal fan voltage

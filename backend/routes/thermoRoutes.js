@@ -1,47 +1,43 @@
 const express = require("express");
+const Thermocooler = require("../models/thermocoolerModel");
+const requireAuth = require("../middleware/requireAuth");
+const {
+  getAllThermocoolers,
+  getThermocooler,
+  addThermocooler,
+  deleteThermocooler,
+  updatePowerState,
+  updateSetTemperature,
+  updateFanSpeed,
+} = require("../controllers/thermoController");
 
 const router = express.Router();
 
+router.use(requireAuth);
+
+// (req, res) => {
+//   res.json({ message: "UPDATE water pump" });
+// }
 // Roles - Users
+// GET all thermocoolers for the authenticated user
+router.get("/", getAllThermocoolers);
 
-// GET the power state of the thermocooler (ON/OFF)
-router.get("/:id/power", (req, res) => {
-  res.json({ message: "GET power state" });
-});
+// GET a single thermocooler by ID
+router.get("/:id", getThermocooler);
 
-// PATCH the power state of the thermocooler (ON/OFF)
-router.patch("/:id/power", (req, res) => {
-  res.json({ message: "UPDATE power state" });
-});
+// POST a new thermocooler (add a new room)
+router.post("/", addThermocooler);
 
-// GET the set temperature of the thermocooler
-router.get("/:id/set-temperature", (req, res) => {
-  res.json({ message: "GET set temperature" });
-});
+// DELETE a thermocooler by ID
+router.delete("/:id", deleteThermocooler);
 
-// PATCH the set temperature of the thermocooler
-router.patch("/:id/set-temperature", (req, res) => {
-  res.json({ message: "UPDATE set temperature" });
-});
+// PATCH the power state of a specific thermocooler (ON/OFF)
+router.patch("/:id/power", updatePowerState);
 
-// GET the current temperature of the thermocooler (Read-only) (Real Time)
-router.get("/:id/current-temperature", (req, res) => {
-  res.json({ message: "GET current temperature" });
-});
+// PATCH the set temperature of a specific thermocooler
+router.patch("/:id/set-temperature", updateSetTemperature);
 
-// GET the energy usage of the thermocooler (Read-only) (Real Time)
-router.get("/:id/energy", (req, res) => {
-  res.json({ message: "GET energy usage" });
-});
-
-// GET the fan speed of the thermocooler
-router.get("/:id/fan-speed", (req, res) => {
-  res.json({ message: "GET fan speed" });
-});
-
-// PATCH the fan speed of the thermocooler
-router.patch("/:id/fan-speed", (req, res) => {
-  res.json({ message: "UPDATE fan speed" });
-});
+// PATCH the fan speed of a specific thermocooler
+router.patch("/:id/fan-speed", updateFanSpeed);
 
 module.exports = router;

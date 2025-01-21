@@ -27,6 +27,7 @@ const thermocoolerSchema = new Schema(
       type: Number,
       default: 0, // Fan speed (e.g., in RPM)
     },
+    arduinoAddress: { type: String, required: true },
     energyUsage: {
       type: Number,
       default: 0, // Energy usage (e.g., in kWh or other units)
