@@ -3,6 +3,11 @@ require("dotenv").config();
 
 const express = require("express");
 const mongoose = require("mongoose");
+const authRoutes = require("./routes/authRoutes");
+const thermocoolerRoutes = require("./routes/thermoRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+const energyRoutes = require("./routes/energyRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 //Express App
 const app = express();
@@ -16,19 +21,23 @@ app.get((req, res, next) => {
 });
 
 // Routes
-// app.use("/api/auth", require("./routes/auth"));
+app.use("/api/auth", authRoutes);
+app.use("/api/thermocooler", thermocoolerRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/energy", energyRoutes);
+app.use("/api/admin", adminRoutes);
 
-app.get("/", (req, res) => {
-  res.json({ mssg: "Welcome to the app" });
-});
-
-console.log(process.env.PORT);
-app.listen(process.env.PORT, () =>
-  console.log(`Server running on port`, process.env.PORT)
-);
-// mongoose.connect(process.env.MONGO_URI).then(() => {
-//   //listen for requests
-//   app.listen(process.env.PORT, () =>
-//     console.log(`Server running on port ${process.env.PORT}`)
-//   );
-// });
+// app.listen(process.env.PORT, () =>
+//   console.log(`Server running on port`, process.env.PORT)
+// );
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    //listen for requests
+    app.listen(process.env.PORT, () =>
+      console.log(`Server running on port ${process.env.PORT}`)
+    );
+  })
+  .catch((error) => {
+    console.log(error);
+  });
