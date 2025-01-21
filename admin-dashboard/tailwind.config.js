@@ -1,0 +1,41 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.{html,js}"],
+  theme: {
+    extend: {
+      colors: {
+        // Colors for Blue, Gray, Yellow, etc.
+        "blue-50": "#e3f2fd",
+        "blue-100": "#bbdefb",
+        "blue-200": "#90caf9",
+        "blue-300": "#64b5f6",
+        "blue-400": "#42a5f5",
+        "blue-500": "#2196f3",
+        "blue-600": "#1e88e5",
+        "blue-700": "#1976d2",
+        "blue-800": "#1565c0",
+        "blue-900": "#0d47a1",
+        "gray-100": "#f8f9fa",
+        "gray-200": "#eaecef",
+        "gray-300": "#dee2e6",
+        "gray-400": "#ced4da",
+        "gray-500": "#acb5bd",
+        "gray-600": "#6c757d",
+        "gray-700": "#495057",
+        "gray-800": "#343a40",
+        "gray-900": "#212529",
+        "yellow-50": "#fffde7",
+        "yellow-100": "#fff9c4",
+        "yellow-200": "#fff59d",
+        "yellow-300": "#fff076",
+        "yellow-400": "#ffee58",
+        "yellow-500": "#ffeb3b",
+        "yellow-600": "#fdd836",
+        "yellow-700": "#fbc02d",
+        "yellow-800": "#f9a925",
+        "yellow-900": "#f57f16",
+      },
+    },
+  },
+  plugins: [],
+};
