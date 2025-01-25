@@ -48,34 +48,59 @@ userSchema.statics.signup = async function (
   password,
   confirmPassword
 ) {
-  // validation
-  if (!email || !password || !confirmPassword) {
-    throw Error("All fields must be filled");
-  }
-  if (!validator.isEmail(email)) {
-    throw Error("Email not valid");
-  }
-  if (!validator.isStrongPassword(password)) {
-    throw Error("Password not strong enough");
-  }
-  if (password !== confirmPassword) {
-    throw Error("Passwords do not match");
+  const errors = {};
+
+  // Validate username
+  if (username) {
+    try {
+      await this.validateUsername(username);
+    } catch (error) {
+      errors.username = error.message; // Collect username-specific error
+    }
+  } else {
+    errors.username = "Please enter your username";
   }
 
-  const usernameExists = await this.findOne({ username });
-  const emailExists = await this.findOne({ email });
-
-  if (usernameExists) {
-    throw Error("Username already in use");
+  // Validate email
+  if (email) {
+    try {
+      await this.validateEmail(email);
+    } catch (error) {
+      errors.email = error.message; // Collect email-specific error
+    }
+  } else {
+    errors.email = "Please enter your email";
   }
 
-  if (emailExists) {
-    throw Error("Email already in use");
+  // Validate password
+  if (password) {
+    if (!validator.isStrongPassword(password)) {
+      errors.password =
+        "Password must have at least 8 characters, including numbers, letters, and special characters (!$@%)";
+    }
+  } else {
+    errors.password = "Please enter a password";
   }
 
-  //Hashed password
+  // Validate confirmPassword
+  if (confirmPassword) {
+    if (password !== confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+  } else {
+    errors.confirmPassword = "Please confirm your password";
+  }
+
+  // Check for errors
+  if (Object.keys(errors).length > 0) {
+    throw { message: "Validation errors", errors }; // Throw a structured error object
+  }
+
+  // Hash the password
   const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash(password, salt);
+
+  // Create the user
   const user = await this.create({ email, username, password: hash });
 
   return user;
@@ -83,26 +108,169 @@ userSchema.statics.signup = async function (
 
 // static login method
 userSchema.statics.login = async function (role, email, password) {
-  if (!email || !password) {
-    throw Error("All fields must be filled");
+  const errors = {};
+
+  // Validate email and password presence
+  if (!email) {
+    errors.email = "Email is required";
+  }
+  if (!password) {
+    errors.password = "Password is required";
   }
 
+  // Check if email or password are missing and return the error object
+  if (Object.keys(errors).length > 0) {
+    throw { message: "Validation errors", errors };
+  }
+
+  // Check if the user exists
   const user = await this.findOne({ email });
   if (!user) {
-    throw Error("Incorrect email");
+    errors.general = "Incorrect email or password";
+    throw { message: "Authentication error", errors };
   }
 
+  // Validate password
   const match = await bcrypt.compare(password, user.password);
   if (!match) {
-    throw Error("Incorrect password");
+    errors.general = "Incorrect email or password";
+    throw { message: "Authentication error", errors };
   }
 
-  // Check if the user is an admin after authentication
-  if (role == "admin") {
-    await this.checkAdminRole(user);
+  // Check role if admin
+  if (role === "admin") {
+    try {
+      await this.checkAdminRole(user);
+    } catch (err) {
+      errors.role = "User does not have admin privileges";
+      throw { message: "Authorization error", errors };
+    }
   }
 
   return user;
+};
+
+// static update details method
+userSchema.statics.updateDetails = async function (
+  username,
+  email,
+  profilePicture,
+  user
+) {
+  const errors = {};
+
+  // Validate and update username
+  if (username) {
+    try {
+      await this.validateUsername(username);
+      user.username = username;
+    } catch (error) {
+      errors.username = error.message; // Store the error message for the username field
+    }
+  }
+
+  // Validate and update email
+  if (email) {
+    try {
+      await this.validateEmail(email);
+      user.email = email;
+    } catch (error) {
+      errors.email = error.message; // Store the error message for the email field
+    }
+  }
+
+  // Validate and update email
+  if (profilePicture) {
+    user.profilePicture = profilePicture;
+  }
+
+  // If there are validation errors, return them
+  if (Object.keys(errors).length > 0) {
+    throw new Error(JSON.stringify(errors)); // Throw an error with the collected errors
+  }
+  // Save and return the updated user
+  await user.save();
+  return user;
+};
+
+// static update details method
+userSchema.statics.changePassword = async function (
+  password,
+  newPassword,
+  confirmNewPassword,
+  user
+) {
+  const errors = {};
+
+  // Validate current password
+  if (password) {
+    try {
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        errors.password = "Incorrect password";
+      }
+    } catch (error) {
+      errors.password = error.message;
+    }
+  } else {
+    errors.password = "Please enter your current password.";
+  }
+
+  // Validate new password only if current password is valid
+  if (!errors.password) {
+    if (!newPassword) {
+      errors.newPassword = "Please enter your new password.";
+    } else {
+      if (newPassword === password) {
+        errors.newPassword =
+          "New password is the same as the current password.";
+      }
+      if (!validator.isStrongPassword(newPassword)) {
+        errors.newPassword =
+          "New password must have at least 8 characters, including numbers, letters, and special characters (!$@%).";
+      }
+    }
+
+    if (!confirmNewPassword) {
+      errors.confirmNewPassword = "Please confirm your new password.";
+    } else if (newPassword !== confirmNewPassword) {
+      errors.confirmNewPassword = "New passwords do not match.";
+    }
+  }
+
+  // If there are validation errors, throw them
+  if (Object.keys(errors).length > 0) {
+    throw new Error(JSON.stringify(errors));
+  }
+
+  // Hash and update the password if valid
+  if (newPassword && newPassword === confirmNewPassword) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+  }
+
+  // Save and return the updated user
+  await user.save();
+  return user;
+};
+
+// Validate Username
+userSchema.statics.validateUsername = async function (username) {
+  const usernameExists = await this.findOne({ username });
+  if (usernameExists) {
+    throw Error("Username has been taken");
+  }
+};
+
+// Validate Email
+userSchema.statics.validateEmail = async function (email) {
+  if (!validator.isEmail(email)) {
+    throw Error("Email not valid");
+  }
+  const emailExists = await this.findOne({ email });
+  if (emailExists) {
+    throw Error("Email has already been registered to an account");
+  }
 };
 
 // Check if the user has the admin role

@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { useAuthContext } from "./useAuthContext";
-import { useNavigate } from "react-router-dom";
 
 export const useLogin = () => {
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(null);
+  const [error, setError] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const { dispatch } = useAuthContext();
-  const navigate = useNavigate(); // Initialize navigate
 
   const login = async (email, password) => {
     setIsLoading(true);
-    setError(null);
+    setError({});
 
     const response = await fetch("/api/auth/admin-login", {
       method: "POST",
@@ -21,20 +19,18 @@ export const useLogin = () => {
 
     if (!response.ok) {
       setIsLoading(false);
-      setError(json.error);
+      setError(json.error.errors || {});
     }
     if (response.ok) {
-      //save the user to local storage
+      // Save the user to local storage
       localStorage.setItem("user", JSON.stringify(json));
 
-      //update the auth context
+      // Update the auth context
       dispatch({ type: "LOGIN", payload: json });
 
       setIsLoading(false);
-
-      // Redirect to home page
-      navigate("/home");
     }
   };
+
   return { login, isLoading, error };
 };

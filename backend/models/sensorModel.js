@@ -4,6 +4,10 @@ const Schema = mongoose.Schema;
 
 const sensorSchema = new Schema(
   {
+    name: {
+      type: String,
+      required: true,
+    },
     sensorType: {
       type: String,
       required: true, // Example: "temperature", "humidity"

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const User = require("../models/userModel");
 const Thermocooler = require("../models/thermocoolerModel");
 const Sensor = require("../models/sensorModel");
 const Energy = require("../models/energyModel");
@@ -58,12 +59,15 @@ const getThermocooler = async (req, res) => {
 };
 
 const createSensors = async (thermocoolerId) => {
+  const sensorNames = ["Sensor 1", "Sensor 2", "Sensor 3", "Sensor 4"];
   const sensorValues = [0, 0, 0, 0]; // Default sensor values
+
   const sensors = await Promise.all(
-    sensorValues.map((value) =>
+    sensorNames.map((name, index) =>
       new Sensor({
+        name, // Pass the name for each sensor
         sensorType: "temperature",
-        value,
+        value: sensorValues[index], // Use the corresponding value
         thermocoolerId,
       }).save()
     )
@@ -104,11 +108,18 @@ const addThermocooler = async (req, res) => {
       setTemperature: 25, // Default value
       fanSpeed: 0, // Default value
       arduinoAddress,
-      userId, // Link thermocooler to the authenticated user
+      userId,
     });
 
-    // Save the thermocooler to the database
     const savedThermocooler = await newThermocooler.save();
+
+    // Add the new thermocooler ID to the user's thermocoolers array
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    user.thermocoolers.push(savedThermocooler._id);
+    await user.save();
 
     // Create sensors for the thermocooler
     const sensors = await createSensors(savedThermocooler._id);
@@ -235,6 +246,10 @@ const updateSetTemperature = async (req, res) => {
   try {
     const { id } = req.params; // Thermocooler ID from the route parameters
     const { setTemperature } = req.body; // Desired temperature from the request body
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid thermocooler ID." });
+    }
 
     if (
       typeof setTemperature !== "number" ||
