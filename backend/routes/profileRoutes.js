@@ -1,15 +1,19 @@
 const express = require("express");
+const requireAuth = require("../middleware/requireAuth");
+const {
+  updateUserProfile,
+  updatePassword,
+} = require("../controllers/profileController");
 
 const router = express.Router();
 
-// Update user profile information (Username, email, password)
-router.put("/:id", (req, res) => {
-  res.json({ message: "UPDATE user profile information" });
-});
+//require auth for all profile function
+router.use(requireAuth);
 
-// Update profile picture of user
-router.patch("/:id/picture", (req, res) => {
-  res.json({ message: "UPDATE profile picture" });
-});
+// Update user profile information (Username, email, profile picture)
+router.put("/", updateUserProfile);
+
+// Change Password
+router.put("/change-password", updatePassword);
 
 module.exports = router;

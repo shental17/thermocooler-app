@@ -21,7 +21,7 @@ const login = async (role, req, res) => {
       token,
     });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error });
   }
 };
 
@@ -47,7 +47,7 @@ const signupUser = async (req, res) => {
       token,
     });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error });
   }
 };
 

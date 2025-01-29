@@ -5,7 +5,7 @@ import { useAuthContext } from "./hooks/useAuthContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Thermocooler from "./pages/Thermocooler";
-import Navbar from "./components/navbar";
+import Navbar from "./components/Navbar";
 
 function AppContent() {
   const { user } = useAuthContext();

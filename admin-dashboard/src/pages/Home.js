@@ -2,37 +2,38 @@ import React, { useState, useEffect } from "react";
 import { useAuthContext } from "../hooks/useAuthContext";
 import UserDetails from "../components/UserDetails";
 
-const usersData = [
-  {
-    id: "1",
-    username: "John Doe",
-    email: "john@example.com",
-    thermocoolers: [
-      {
-        id: "A123",
-        name: "Main Room Cooler",
-      },
-      {
-        id: "B456",
-        name: "Bedroom Cooler",
-      },
-    ],
-  },
-  {
-    id: "2",
-    username: "Jane Smith",
-    email: "jane@example.com",
-    thermocoolers: [
-      {
-        id: "C789",
-        name: "Living Room Cooler",
-      },
-    ],
-  },
-];
+// const usersData = [
+//   {
+//     id: "1",
+//     username: "John Doe",
+//     email: "john@example.com",
+//     thermocoolers: [
+//       {
+//         id: "A123",
+//         name: "Main Room Cooler",
+//       },
+//       {
+//         id: "B456",
+//         name: "Bedroom Cooler",
+//       },
+//     ],
+//   },
+//   {
+//     id: "2",
+//     username: "Jane Smith",
+//     email: "jane@example.com",
+//     thermocoolers: [
+//       {
+//         id: "C789",
+//         name: "Living Room Cooler",
+//       },
+//     ],
+//   },
+// ];
 
 const Home = () => {
   const [search, setSearch] = useState("");
+  const [userData, setUserData] = useState([]);
   const { user } = useAuthContext();
 
   useEffect(() => {
@@ -45,7 +46,7 @@ const Home = () => {
       const json = await response.json();
 
       if (response.ok) {
-        console.log(JSON.stringify(json));
+        setUserData(json);
       }
     };
     if (user) {
@@ -53,7 +54,7 @@ const Home = () => {
     }
   }, []);
 
-  const filteredUsers = usersData.filter(
+  const filteredUsers = userData.filter(
     (user) =>
       user.username.toLowerCase().includes(search.toLowerCase()) ||
       user.thermocoolers.some(

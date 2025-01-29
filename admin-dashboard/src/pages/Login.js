@@ -39,6 +39,11 @@ const Login = () => {
                 required
                 className="block w-full rounded-md bg-gray-100 p-3 text-base text-black placeholder:text-gray-500 focus:outline focus:ring-2 focus:ring-blue-600"
               />
+              {error.email && (
+                <p className="mt-2 p-2 text-sm bg-red-100 text-red-500 rounded-md">
+                  {error.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -53,9 +58,14 @@ const Login = () => {
                 required
                 className="block w-full rounded-md bg-gray-100 p-3 text-base text-black placeholder:text-gray-500 focus:outline focus:ring-2 focus:ring-blue-600"
               />
+              {error.password && (
+                <p className="mt-2 p-2 text-sm bg-red-100 text-red-500 rounded-md">
+                  {error.password}
+                </p>
+              )}
             </div>
 
-            <div className="flex justify-between items-center">
+            {/* <div className="flex justify-between items-center">
               <div className="text-sm">
                 <a
                   href="#"
@@ -64,7 +74,7 @@ const Login = () => {
                   Forgot password?
                 </a>
               </div>
-            </div>
+            </div> */}
 
             <div>
               <button
@@ -80,9 +90,14 @@ const Login = () => {
                 Login
               </button>
             </div>
-            {error && (
+            {error.general && (
               <p className="mt-2 p-2 text-sm bg-red-100 text-red-500 rounded-md">
-                {error}
+                {error.general}
+              </p>
+            )}
+            {error.role && (
+              <p className="mt-2 p-2 text-sm bg-red-100 text-red-500 rounded-md">
+                {error.role}
               </p>
             )}
           </form>
