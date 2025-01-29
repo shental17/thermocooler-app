@@ -1,0 +1,65 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# React Native
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/
+android/build/
+android/.cxx/
+android/local.properties
+vendor/
+
+# macOS
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.iml
+
+# Metro bundler cache
+.expo/
+.expo-shared/
+babel.config.js
+metro.config.js
+index.js
+dist/
+
+# Debug and logs
+debug.log
+*.log
+*.log.*
+
+# Temporary files
+tmp/
+*.swp
+*.swo
+*.swn
+
+# React Native caches
+__tests__
+__mocks__
+coverage/
+*.tlog
+
+# Build artifacts
+*.keystore
+*.so
+*.apk
+*.aab
+*.hprof
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+
+# Env files
+.env
+.env.*
