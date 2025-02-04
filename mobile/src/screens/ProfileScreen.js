@@ -103,6 +103,7 @@ const ProfileScreen = ({navigation}) => {
     },
     headerContainer: {
       padding: theme.spacing.spacingMd,
+      paddingTop: theme.spacing.spacing3xl,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -133,6 +134,7 @@ const ProfileScreen = ({navigation}) => {
       gap: theme.spacing.spacingMd,
     },
     detailsContainer: {
+      flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       alignSelf: 'stretch',
@@ -157,10 +159,14 @@ const ProfileScreen = ({navigation}) => {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        {isEditing && (
+        {isEditing ? (
           <TouchableOpacity style={styles.headerLeft} onPress={handleCancel}>
-            <Text style={styles.headerLeftText}>Cancel</Text>
+            <Text style={styles.headerLeftText}>Cancel</Text>{' '}
           </TouchableOpacity>
+        ) : (
+          <View style={styles.headerLeft}>
+            <Text style={textStyles.mainHeadingSmall}>Profile</Text>
+          </View>
         )}
 
         <TouchableOpacity
@@ -218,20 +224,24 @@ const ProfileScreen = ({navigation}) => {
           <>
             <AppButton
               icon="scissors"
-              onPress={() => console.log('Pressed Save')}>
+              onPress={() => navigation.navigate('ChangePassword')}>
               Change Password
-            </AppButton>
-            <AppButton
-              backgroundColor={theme.colors.error}
-              icon="sign-out"
-              onPress={() => {
-                handleLogout();
-              }}>
-              Logout
             </AppButton>
           </>
         )}
       </View>
+      {!isEditing && (
+        <>
+          <AppButton
+            backgroundColor={theme.colors.error}
+            icon="sign-out"
+            onPress={() => {
+              handleLogout();
+            }}>
+            Logout
+          </AppButton>
+        </>
+      )}
     </View>
   );
 };
