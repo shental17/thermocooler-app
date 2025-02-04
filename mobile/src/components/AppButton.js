@@ -1,7 +1,14 @@
 import React from 'react';
-import {TouchableOpacity, Text, StyleSheet, View} from 'react-native';
-import {ActivityIndicator} from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import {useTheme} from '../hooks/useTheme';
+import textStyles from '../styles/textStyle';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const AppButton = ({
   backgroundColor,
@@ -32,7 +39,11 @@ const AppButton = ({
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={() => {
+        if (onPress) {
+          onPress();
+        }
+      }}
       activeOpacity={0.7}
       disabled={disabled || inactive}
       style={[
@@ -42,9 +53,9 @@ const AppButton = ({
           borderRadius,
           padding,
           width: stretch ? '100%' : 'auto',
-          flexDirection: icon ? 'row' : 'column',
+          flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: icon ? 'space-between' : 'center',
         },
         !filled && {
           backgroundColor: 'transparent',
@@ -56,8 +67,12 @@ const AppButton = ({
         <ActivityIndicator size="small" color={textColor} />
       ) : (
         <>
-          <Text style={[styles.text, {color: textColor}]}>{children}</Text>
-          {icon && <View style={styles.icon}>{icon}</View>}
+          <Text style={[textStyles.bodyTextLarge, {color: textColor}]}>
+            {children}
+          </Text>
+          {icon && (
+            <Icon name={icon} size={24} color={textColor} style={styles.icon} />
+          )}
         </>
       )}
     </TouchableOpacity>
@@ -68,10 +83,7 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    alignSelf: 'stretch',
   },
   icon: {
     marginLeft: 8,

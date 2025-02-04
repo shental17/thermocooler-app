@@ -2,6 +2,7 @@ import React from 'react';
 import {View, Text, StyleSheet, Image} from 'react-native';
 import AppButton from '../components/AppButton';
 import {useTheme} from '../hooks/useTheme';
+import textStyles from '../styles/textStyle';
 import homeLightImage from '../assets/homeLight.png';
 import homeDarkImage from '../assets/homeDark.png';
 
@@ -29,9 +30,6 @@ export default function WelcomeScreen({navigation}) {
       alignItems: 'center',
     },
     title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: theme.colors.textPrimary,
       marginBottom: theme.spacing.spacingLg,
     },
     buttonContainer: {
@@ -56,15 +54,24 @@ export default function WelcomeScreen({navigation}) {
         <Image source={imageSource} style={styles.image} />
       </View>
       <View style={styles.contentContainer}>
-        <Text style={styles.title}>Welcome!</Text>
+        <Text style={[textStyles.mainHeadingSmall, styles.title]}>
+          Welcome!
+        </Text>
         <View style={styles.buttonContainer}>
-          <AppButton onPress={() => navigation.navigate('Login')}>
+          <AppButton
+            onPress={() => {
+              console.log('Pressed Login');
+              navigation.navigate('Login');
+            }}>
             Login
           </AppButton>
           <AppButton
             backgroundColor={theme.colors.navContainer}
             textColor={theme.colors.textSecondary}
-            onPress={() => navigation.navigate('SignUp')}>
+            onPress={() => {
+              console.log('Pressed Sign Up');
+              navigation.navigate('SignUp');
+            }}>
             Sign Up
           </AppButton>
         </View>

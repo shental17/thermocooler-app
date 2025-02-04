@@ -1,82 +1,92 @@
-import React from 'react';
-import {TextInput, StyleSheet, View, Text} from 'react-native';
+import React, {useState} from 'react';
+import {TextInput, StyleSheet, View, TouchableOpacity} from 'react-native';
 import {useTheme} from '../hooks/useTheme';
+import textStyles from '../styles/textStyle';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const AppInput = ({
-  placeholder,
   value,
   onChangeText,
+  placeholder,
+  backgroundColor,
+  borderColor,
+  borderRadius,
+  padding,
+  textColor,
+  placeholderTextColor,
+  stretch = true,
   secureTextEntry = false,
-  error = false,
-  icon = null,
-  label,
-  style,
-  ...props
+  keyboardType = 'default',
+  autoCapitalize = 'none',
+  editable = true,
 }) => {
   const theme = useTheme();
+  const [isPasswordVisible, setIsPasswordVisible] = useState(!secureTextEntry);
 
-  // Set default values using the theme
-  const inputBackgroundColor = disabled ? '#d3d3d3' : theme.colors.navContainer;
-  const inputBorderColor = error
-    ? theme.colors.error
-    : theme.colors.navContainer;
-  const textColor = disabled ? '#a9a9a9' : theme.colors.textSecondary;
+  backgroundColor = backgroundColor || theme.colors.navContainer;
+  borderColor = borderColor || theme.colors.navContainer;
+  borderRadius = borderRadius || theme.radius.radiusMd;
+  padding = padding || theme.spacing.spacingMd;
+  textColor = textColor || theme.colors.textPrimary;
+  placeholderTextColor = placeholderTextColor || theme.colors.textSecondary;
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
 
   return (
-    <View style={[styles.container, style]}>
-      {label && <Text style={[styles.label, {color: textColor}]}>{label}</Text>}
-      <View
-        style={[
-          styles.inputContainer,
-          {
-            backgroundColor: inputBackgroundColor,
-            borderColor: inputBorderColor,
-          },
-        ]}>
-        <TextInput
-          {...props}
-          style={[styles.input, {color: textColor}]}
-          value={value}
-          onChangeText={onChangeText}
-          secureTextEntry={secureTextEntry}
-          editable={!disabled}
-          placeholder={placeholder}
-          placeholderTextColor={theme.colors.placeholder}
-        />
-        {icon && <View style={styles.icon}>{icon}</View>}
-      </View>
-      {error && <Text style={styles.errorText}>This field is required.</Text>}
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor,
+          borderColor,
+          borderRadius,
+          padding,
+          width: stretch ? '100%' : 'auto',
+        },
+      ]}>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={placeholderTextColor}
+        secureTextEntry={!isPasswordVisible}
+        style={[textStyles.bodyTextLarge, styles.input, {color: textColor}]}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        editable={editable}
+      />
+      {secureTextEntry && (
+        <TouchableOpacity
+          onPress={togglePasswordVisibility}
+          style={styles.iconContainer}>
+          <Icon
+            name={isPasswordVisible ? 'facebook' : 'eye'}
+            size={24}
+            color={textColor}
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    fontWeight: 'bold',
-  },
-  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    justifyContent: 'space-between',
     borderWidth: 1,
-    borderRadius: 8,
+    marginVertical: 10,
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    paddingVertical: 0, // Adjust padding to ensure text is not cut off
+    textAlignVertical: 'center', // Vertically center the text
   },
   icon: {
     marginLeft: 8,
-  },
-  errorText: {
-    color: '#ff0000',
-    fontSize: 12,
-    marginTop: 4,
   },
 });
 

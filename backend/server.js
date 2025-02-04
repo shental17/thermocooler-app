@@ -13,7 +13,8 @@ const adminRoutes = require("./routes/adminRoutes");
 const app = express();
 
 //Middleware
-app.use(express.json());
+app.use(express.json({ limit: "10mb" })); // Increase the limit to 10MB or more as needed
+app.use(express.urlencoded({ limit: "10mb", extended: true })); // Increase the limit to 10MB or more as needed
 
 app.get((req, res, next) => {
   console.log(req.path, req.method);
