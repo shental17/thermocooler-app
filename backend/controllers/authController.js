@@ -43,7 +43,8 @@ const signupUser = async (req, res) => {
     await user.save;
     res.status(200).json({
       email: user.email,
-      user,
+      username: user.username,
+      profilePicture: user.profilePicture,
       token,
     });
   } catch (error) {
