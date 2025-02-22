@@ -2,7 +2,6 @@ import React, {useState, useEffect} from 'react';
 import {View, Text, StyleSheet, Alert} from 'react-native';
 import AppInput from '../components/AppInput';
 import AppButton from '../components/AppButton';
-import AppModal from '../components/AppModal';
 import {useTheme} from '../hooks/useTheme';
 import {useSignup} from '../hooks/useSignup';
 import textStyles from '../styles/textStyle';
@@ -14,7 +13,6 @@ const LoginScreen = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const {signup, isLoading, error, isSuccess} = useSignup();
-  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     if (isSuccess) {
@@ -139,12 +137,6 @@ const LoginScreen = ({navigation}) => {
           </Text>
         </Text>
       </View>
-
-      <AppModal
-        visible={modalVisible}
-        message="Signup Successful!"
-        onClose={() => setModalVisible(false)}
-      />
     </View>
   );
 };

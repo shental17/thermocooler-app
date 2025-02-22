@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 # Node.js dependencies
 node_modules/
 npm-debug.log
@@ -64,7 +63,6 @@ fastlane/screenshots
 # Env files
 .env
 .env.*
-=======
 # Logs
 logs
 *.log
@@ -114,4 +112,3 @@ ios/Pods/
 *.ino.*
 *.hex
 *.bin
->>>>>>> Stashed changes
