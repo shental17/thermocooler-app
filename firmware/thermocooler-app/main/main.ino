@@ -9,6 +9,7 @@
 #include "TemperatureSensors.h"
 #include "FanSpeedControl.h"
 #include "DHTSensor.h"
+#include "WaterpumpControl.h"
 #include "time.h"
 
 // // Create AsyncWebServer object on port 80
@@ -17,7 +18,7 @@
 
 // Timer variables
 unsigned long lastTime = 0;  
-unsigned long timerDelay = 30000;
+unsigned long timerDelay = 20000;
 
 // Token Callback function
 void tokenStatusCallback(TokenInfo info);
@@ -28,11 +29,24 @@ const char* ntpServer = "pool.ntp.org";
 // Variable to save current epoch time
 unsigned long epochTime; 
 
+#define RELAY_PIN 16
+#define FANPIN1 14  // Pin for first FAN
 #define DHTPIN1 5  // Pin for first DHT sensor
-// #define DHTPIN2 5  // Pin for second DHT sensor
-#define DHTTYPE DHT22  // DHT sensor type
+#define DHTPIN2 18  // Pin for second DHT sensor
+// #define DHTPIN3 12  // Pin for third DHT sensor
+#define DHTTYPE DHT22  // DHT sensor type 1
+// #define DHTTYPE2 DHT11  // DHT sensor type 2
+#define PUMPPIN1 15  // Pin for first PUMP sensor
 
+FanSpeedControl fan1(FANPIN1);  // Fan on pin 14
 DHTSensor dhtSensor1(DHTPIN1, DHTTYPE);
+DHTSensor dhtSensor2(DHTPIN2, DHTTYPE);
+// DHTSensor dhtSensor3(DHTPIN3, DHTTYPE2);
+FanSpeedControl pump(PUMPPIN1); // Pump on pin 15
+
+const int fan1SpeedPercentage = 100;
+const int pumpSpeedPercentage = 100;
+
 
 void setup() {
   Serial.begin(9600);
@@ -52,10 +66,14 @@ void setup() {
   // Begin the access token generation for Google API authentication
   GSheet.begin(CLIENT_EMAIL, PROJECT_ID, PRIVATE_KEY);
 
+  pinMode(RELAY_PIN, OUTPUT);
   setupWaterFlowSensor();
   setupTemperatureSensors();
-  setupFanSpeedControl();
+  fan1.begin();
+  pump.begin();
   dhtSensor1.begin();
+  dhtSensor2.begin();
+  // dhtSensor3.begin();
 }
 
 void loop() {
@@ -73,17 +91,28 @@ void loop() {
 
         FirebaseJson valueRange;
 
+        digitalWrite(RELAY_PIN, HIGH);
         // Set Fan Speed
-        setFanSpeed();
+        fan1.setSpeed(fan1SpeedPercentage);  // Set fan 1 to 50%
+        pump.setSpeed(pumpSpeedPercentage);
+        // On Pump
+        // pump.turnOn();
         // Get temperature sensor readings
         loopTemperatureSensors();
         // Get waterflow sensor readings
         loopWaterFlowSensor();
         // Get humidity sensor readings
-        // Read values from first sensor
+        // Read values from first DHT sensor
         float humidity1 = dhtSensor1.getHumidity();
         float tempC1 = dhtSensor1.getTemperature();
         float heatIndexC1 = dhtSensor1.getHeatIndex();
+        // Read values from second DHT sensor
+        float humidity2 = dhtSensor2.getHumidity();
+        float tempC2 = dhtSensor2.getTemperature();
+        float heatIndexC2 = dhtSensor2.getHeatIndex();
+        // Read values from third DHT sensor
+        // float humidity3 = dhtSensor3.getHumidity();
+        // float tempC3 = dhtSensor3.getTemperature();
 
         // Get timestamp
         epochTime = getTime();
@@ -108,7 +137,15 @@ void loop() {
         valueRange.set("values/[7]/[0]", humidity1);
         valueRange.set("values/[8]/[0]", tempC1);
         valueRange.set("values/[9]/[0]", heatIndexC1);
-        // valueRange.set("values/[7]/[0]", fanSpeedPercentage);
+        valueRange.set("values/[10]/[0]", humidity2);
+        valueRange.set("values/[11]/[0]", tempC2);
+        valueRange.set("values/[12]/[0]", heatIndexC2);
+        // valueRange.set("values/[13]/[0]", humidity3);
+        // valueRange.set("values/[14]/[0]", tempC3);
+        valueRange.set("values/[13]/[0]", fan1SpeedPercentage);
+        valueRange.set("values/[14]/[0]", pumpSpeedPercentage);
+        
+
 
         // For Google Sheet API ref doc, go to https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/append
         // Append values to the correct sheet (date as sheet name)
@@ -191,17 +228,20 @@ void addHeadersIfNeeded(String sheetName) {
     // Define headers in an array
     const char* headers[] = {
         "Timestamp", 
-        "Temp Sensor 1 (°C)", 
-        "Temp Sensor 2 (°C)", 
-        "Temp Sensor 3 (°C)", 
-        "Temp Sensor 4 (°C)", 
+        "Cooling Tower Water Temp Sensor 1 (°C)", 
+        "Ambient Water Temp Sensor 2 (°C)", 
+        "Outlet Fan Air Temp Sensor 3 (°C)", 
+        "Cold Fin Temp Sensor 4 (°C)", 
         "Flow Rate (L/min)", 
         "Total Volume (mL)", 
-        "Humidity Sensor 1 Humidity",
-        "Humidity Sensor 1 Temperature (°C)",
-        "Humidity Sensor 1 Heat Index (°C)",
-        "Fan 1 Speed Percentage", 
-        "Fan 2 Speed Percentage"
+        "Ambient Humidity Sensor 1 Humidity",
+        "Ambient Humidity Sensor 1 Temperature (°C)",
+        "Ambient Humidity Sensor 1 Heat Index (°C)",
+        "Outlet Fan Air Humidity Sensor 2 Humidity",
+        "Outlet Fan Air Humidity Sensor 2 Temperature (°C)",
+        "Outlet Fan Air Humidity Sensor 2 Heat Index (°C)",
+        "Outlet Fan Speed Percentage", 
+        "Top Water Pump Speed Percentage"
     };
 
     // Set major dimension and headers
