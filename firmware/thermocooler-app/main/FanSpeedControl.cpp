@@ -5,9 +5,6 @@ FanSpeedControl::FanSpeedControl(int pin) {
 }
 
 void FanSpeedControl::begin() {
-    Serial.print("Initializing PWM for fan on pin ");
-    Serial.println(fanPin);
-    
     ledcAttach(fanPin, freq, resolution);
 }
 
@@ -18,11 +15,11 @@ void FanSpeedControl::setSpeed(int speed) {
     int dutyCycle = map(speed, 0, 100, 0, 255);
     ledcWrite(fanPin, dutyCycle);
     
-    Serial.print("Setting fan on pin ");
-    Serial.print(fanPin);
-    Serial.print(" to speed ");
-    Serial.print(speed);
-    Serial.print("% (duty cycle: ");
-    Serial.print(dutyCycle);
-    Serial.println(")");
+    // Serial.print("Setting fan on pin ");
+    // Serial.print(fanPin);
+    // Serial.print(" to speed ");
+    // Serial.print(speed);
+    // Serial.print("% (duty cycle: ");
+    // Serial.print(dutyCycle);
+    // Serial.println(")");
 }
