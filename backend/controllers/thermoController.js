@@ -37,6 +37,15 @@ const getThermocooler = async (req, res) => {
     if (!thermocooler) {
       return res.status(404).json({ error: "Thermocooler not found." });
     }
+    const io = req.app.get("io");
+    console.log("Io Get");
+
+    io.emit("getThermocooler", {
+      powerstate: thermocooler.powerstate,
+      setTemperature: thermocooler.setTemperature,
+      fanSpeed: thermocooler.fanSpeed,
+    });
+    console.log(`ESP32 Command: Get Thermocooler Readings`);
 
     // Fetch real-time data from Arduino (mocking this for now)
     const arduinoData = {
@@ -215,21 +224,14 @@ const updatePowerState = async (req, res) => {
     if (!thermocooler) {
       return res.status(404).json({ error: "Thermocooler not found." });
     }
+    console.log("Found MongoThermocooler");
+    const io = req.app.get("io");
+    console.log("Io Get");
 
-    // Send command to Arduino
-    try {
-      // Replace the following line with actual Arduino communication code
-      console.log(
-        `Arduino Command: Turn thermocooler ${powerState ? "ON" : "OFF"}`
-      );
-      // Example: await sendCommandToArduino(id, powerState);
-    } catch (arduinoError) {
-      // Rollback the update in case Arduino communication fails
-      await Thermocooler.findByIdAndUpdate(id, { powerState: !powerState });
-      return res
-        .status(500)
-        .json({ error: "Failed to communicate with Arduino." });
-    }
+    io.emit("updatePowerState", { powerState: powerState });
+    console.log(
+      `ESP32 Command: Turn thermocooler ${powerState ? "ON" : "OFF"}`
+    );
 
     res.status(200).json({
       message: `Thermocooler power state updated to ${
@@ -319,24 +321,11 @@ const updateFanSpeed = async (req, res) => {
     if (!thermocooler) {
       return res.status(404).json({ error: "Thermocooler not found." });
     }
+    const io = req.app.get("io");
+    console.log("Io Get");
 
-    // Send command to Arduino
-    try {
-      // Replace this with actual Arduino communication logic
-      console.log(`Arduino Command: Set fan speed to ${fanSpeed}`);
-      // Example: await sendCommandToArduino(id, fanSpeed);
-    } catch (arduinoError) {
-      // Log Arduino error
-      console.error("Arduino communication failed:", arduinoError.message);
-
-      // Optionally rollback the database update if communication fails
-      await Thermocooler.findByIdAndUpdate(id, {
-        fanSpeed: thermocooler.fanSpeed,
-      });
-      return res
-        .status(500)
-        .json({ error: "Failed to communicate with Arduino." });
-    }
+    io.emit("updateFanSpeed", { fanSpeed: fanSpeed });
+    console.log(`ESP32 Command: Update fan speed updated to ${fanSpeed}%.`);
 
     res.status(200).json({
       message: `Fan speed updated to ${fanSpeed}% successfully.`,
