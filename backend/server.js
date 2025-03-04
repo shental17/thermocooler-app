@@ -3,14 +3,20 @@ require("dotenv").config();
 
 const express = require("express");
 const mongoose = require("mongoose");
+const http = require("http");
+const { Server } = require("socket.io");
+
 const authRoutes = require("./routes/authRoutes");
 const thermocoolerRoutes = require("./routes/thermoRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const energyRoutes = require("./routes/energyRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const socketIoRoutes = require("./routes/socketIoRoutes");
 
 //Express App
 const app = express();
+const server = http.createServer(app);
+const io = require("socket.io")(server);
 
 //Middleware
 app.use(express.json({ limit: "10mb" })); // Increase the limit to 10MB or more as needed
@@ -28,14 +34,15 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/energy", energyRoutes);
 app.use("/api/admin", adminRoutes);
 
-// app.listen(process.env.PORT, () =>
-//   console.log(`Server running on port`, process.env.PORT)
-// );
+//Socket.io
+app.set("io", io);
+io.on("connection", socketIoRoutes);
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     //listen for requests
-    app.listen(process.env.PORT, () =>
+    server.listen(process.env.PORT, () =>
       console.log(`Server running on port ${process.env.PORT}`)
     );
   })
