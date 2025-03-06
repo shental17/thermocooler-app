@@ -3,6 +3,8 @@ const User = require("../models/userModel");
 const Thermocooler = require("../models/thermocoolerModel");
 const Sensor = require("../models/sensorModel");
 const Energy = require("../models/energyModel");
+const { controlPlugPowerState } = require("../utils/pythonUtils");
+
 // GET all thermocoolers for the authenticated user
 
 const getAllThermocoolers = async (req, res) => {
@@ -232,6 +234,17 @@ const updatePowerState = async (req, res) => {
     console.log(
       `ESP32 Command: Turn thermocooler ${powerState ? "ON" : "OFF"}`
     );
+
+    //Smart Plug Control
+    console.log("Running control Power Plug Python Script...");
+    controlPlugPowerState(powerState)
+      .then(() => {
+        console.log("Power State Changed!");
+      })
+      .catch((error) => {
+        console.error("Failed to change power state", error);
+      });
+    console.log("Python script Done.");
 
     res.status(200).json({
       message: `Thermocooler power state updated to ${
