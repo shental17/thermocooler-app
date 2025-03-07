@@ -3,7 +3,6 @@ const { DateTime } = require("luxon");
 const chroma = require("chroma-js");
 const User = require("../models/userModel");
 const Thermocooler = require("../models/thermocoolerModel");
-const Sensor = require("../models/sensorModel");
 const Energy = require("../models/energyModel");
 
 //Helper Function to calculate average temperature

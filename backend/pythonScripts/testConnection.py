@@ -2,6 +2,15 @@ import os
 import platform
 import subprocess
 import requests
+import time
+import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve the sensitive information from environment variables
+ip_address = os.getenv("IP_ADDRESS")  # Get IP address from .env file
 
 # Function to ping the device
 def ping_device(ip_address):
@@ -47,11 +56,30 @@ def check_device_http(ip_address):
         print(f"An error occurred while checking the device via HTTP: {e}")
         return False
 
-# Example usage
-ip_address = os.getenv("IP_ADDRESS") 
+# Retry logic
+max_retries = 3
+retry_delay = 5  # seconds
 
-# Ping the device
-ping_device(ip_address)
+# Ping the device with retry logic
+for attempt in range(max_retries):
+    if ping_device(ip_address):
+        break
+    else:
+        if attempt < max_retries - 1:
+            print(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+        else:
+            print("Failed to reach the device after multiple attempts.")
+            sys.exit(1)
 
-# Check device via HTTP
-check_device_http(ip_address)
+# Check device via HTTP with retry logic
+for attempt in range(max_retries):
+    if check_device_http(ip_address):
+        break
+    else:
+        if attempt < max_retries - 1:
+            print(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+        else:
+            print("Failed to reach the device via HTTP after multiple attempts.")
+            sys.exit(1)

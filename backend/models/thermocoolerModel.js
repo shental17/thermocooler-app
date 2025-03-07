@@ -1,10 +1,20 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+
+const roomImages = {
+  "Living Room": "../assets/living-room.png",
+  "Main Bedroom": "../assets/main-bedroom.png",
+  Bedroom: "../assets/bedroom.png",
+  Office: "../assets/office.png",
+  Study: "../assets/study.png",
+};
+
 const thermocoolerSchema = new Schema(
   {
     name: {
       type: String,
       required: true,
+      enum: Object.keys(roomImages),
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,32 +31,32 @@ const thermocoolerSchema = new Schema(
     },
     currentTemperature: {
       type: Number,
-      default: 0, // This can be updated in real time via WebSocket or polling
+      default: 30,
     },
     fanSpeed: {
       type: Number,
-      default: 0, // Fan speed (e.g., in RPM)
+      default: 0, // Fan speed in percentage (0-100)
     },
-    arduinoAddress: { type: String, required: true },
+    esp32Address: { type: String, required: true },
     energyUsage: {
       type: Number,
       default: 0, // Energy usage (e.g., in kWh or other units)
     },
-    waterPumpVoltage: {
+    waterPumpSpeed: {
       type: Number,
-      default: 0, // Water pump voltage (can be adjusted)
+      default: 80, // Water Pump Speed in percentage (0-100)
     },
-    internalFanVoltage: {
-      type: Number,
-      default: 0, // Internal fan voltage (can be adjusted)
-    },
-    sensors: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Sensor",
-      },
-    ],
   },
   { timestamps: true }
 );
+
+// Virtual field for room image
+thermocoolerSchema.virtual("roomImage").get(function () {
+  return roomImages[this.name] || "https://example.com/default-room.jpg";
+});
+
+// Ensure virtual fields are included in JSON output
+thermocoolerSchema.set("toJSON", { virtuals: true });
+thermocoolerSchema.set("toObject", { virtuals: true });
+
 module.exports = mongoose.model("Thermocooler", thermocoolerSchema);
