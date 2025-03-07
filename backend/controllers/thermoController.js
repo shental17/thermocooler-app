@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 const User = require("../models/userModel");
 const Thermocooler = require("../models/thermocoolerModel");
-const Sensor = require("../models/sensorModel");
 const Energy = require("../models/energyModel");
+const { controlPlugPowerState } = require("../utils/pythonUtils");
+
 // GET all thermocoolers for the authenticated user
 
 const getAllThermocoolers = async (req, res) => {
@@ -55,6 +56,7 @@ const getThermocooler = async (req, res) => {
 
     res.status(200).json({
       name: thermocooler.name,
+      roomImage: thermocooler.roomImage,
       powerstate: thermocooler.powerstate,
       setTemperature: thermocooler.setTemperature,
       fanSpeed: thermocooler.fanSpeed,
@@ -65,23 +67,6 @@ const getThermocooler = async (req, res) => {
     // Handle errors gracefully
     res.status(500).json({ error: "Failed to fetch single thermocooler." });
   }
-};
-
-const createSensors = async (thermocoolerId) => {
-  const sensorNames = ["Sensor 1", "Sensor 2", "Sensor 3", "Sensor 4"];
-  const sensorValues = [0, 0, 0, 0]; // Default sensor values
-
-  const sensors = await Promise.all(
-    sensorNames.map((name, index) =>
-      new Sensor({
-        name, // Pass the name for each sensor
-        sensorType: "temperature",
-        value: sensorValues[index], // Use the corresponding value
-        thermocoolerId,
-      }).save()
-    )
-  );
-  return sensors;
 };
 
 const createEnergyRecord = async (thermocoolerId) => {
@@ -95,13 +80,13 @@ const createEnergyRecord = async (thermocoolerId) => {
 
 const addThermocooler = async (req, res) => {
   try {
-    const { name, arduinoAddress } = req.body;
+    const { name, esp32Address } = req.body;
 
     // Check if required fields are provided
-    if (!name || !arduinoAddress) {
+    if (!name || !esp32Address) {
       return res
         .status(400)
-        .json({ error: "Name and Arduino address are required." });
+        .json({ error: "Name and esp32 address are required." });
     }
 
     // Check if user is authenticated
@@ -116,7 +101,7 @@ const addThermocooler = async (req, res) => {
       name,
       setTemperature: 25, // Default value
       fanSpeed: 0, // Default value
-      arduinoAddress,
+      esp32Address,
       userId,
     });
 
@@ -130,21 +115,13 @@ const addThermocooler = async (req, res) => {
     user.thermocoolers.push(savedThermocooler._id);
     await user.save();
 
-    // Create sensors for the thermocooler
-    const sensors = await createSensors(savedThermocooler._id);
-
-    // Add the sensors to the thermocooler
-    savedThermocooler.sensors = sensors.map((sensor) => sensor._id);
-    await savedThermocooler.save();
-
     // Create an initial energy record for the thermocooler
     const initialEnergyRecord = await createEnergyRecord(savedThermocooler._id);
 
-    // Return the response with the newly created thermocooler, sensors, and energy record
+    // Return the response with the newly created thermocooler, and energy record
     res.status(201).json({
-      message: "Thermocooler, Sensors, and Energy Record created successfully",
+      message: "Thermocooler and Energy Record created successfully",
       thermocooler: savedThermocooler,
-      sensors,
       initialEnergyRecord,
     });
   } catch (error) {
@@ -172,24 +149,17 @@ const deleteThermocooler = async (req, res) => {
       });
     }
 
-    // Delete the sensors associated with this thermocooler
-    const sensorDeletionResult = await Sensor.deleteMany({
-      thermocoolerId: thermocooler._id,
-    });
-
-    // Check if sensors were successfully deleted
-    if (sensorDeletionResult.deletedCount === 0) {
-      console.log("No sensors found for this thermocooler.");
-    } else {
-      console.log(`${sensorDeletionResult.deletedCount} sensors deleted.`);
-    }
-
     // Delete the thermocooler
     await Thermocooler.deleteOne({ _id: thermocooler._id });
 
+    // Remove the thermocooler ID from the associated user's thermocoolers array
+    await User.findByIdAndUpdate(userId, {
+      $pull: { thermocoolers: id },
+    });
+
     // Return success message if deleted
     res.status(200).json({
-      message: "Thermocooler and associated sensors deleted successfully.",
+      message: "Thermocooler deleted successfully.",
     });
   } catch (error) {
     console.error("Error deleting thermocooler:", error);
@@ -232,6 +202,17 @@ const updatePowerState = async (req, res) => {
     console.log(
       `ESP32 Command: Turn thermocooler ${powerState ? "ON" : "OFF"}`
     );
+
+    //Smart Plug Control
+    console.log("Running control Power Plug Python Script...");
+    controlPlugPowerState(powerState)
+      .then(() => {
+        console.log("Power State Changed!");
+      })
+      .catch((error) => {
+        console.error("Failed to change power state", error);
+      });
+    console.log("Python script Done.");
 
     res.status(200).json({
       message: `Thermocooler power state updated to ${

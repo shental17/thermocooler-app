@@ -42,7 +42,4 @@ ios/Pods/
 *.sln
 *.sw?
 
-# Arduino build files
-*.ino.*
-*.hex
-*.bin
+*.env
