@@ -27,6 +27,10 @@ const userSchema = new Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    electricityTariff: {
+      type: Number,
+      default: 0,
+    },
     profilePicture: {
       type: String,
       default:

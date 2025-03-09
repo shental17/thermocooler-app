@@ -62,7 +62,7 @@ const AppInput = ({
           onPress={togglePasswordVisibility}
           style={styles.iconContainer}>
           <Icon
-            name={isPasswordVisible ? 'facebook' : 'eye'}
+            name={isPasswordVisible ? 'eye' : 'eye-slash'}
             size={24}
             color={textColor}
           />
