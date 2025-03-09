@@ -75,8 +75,18 @@ const LoginScreen = ({navigation}) => {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={textStyles.mainHeadingSmall}>Welcome!</Text>
-        <Text style={textStyles.subheadingSmall}>
+        <Text
+          style={[
+            {color: theme.colors.textPrimary},
+            textStyles.mainHeadingSmall,
+          ]}>
+          Welcome!
+        </Text>
+        <Text
+          style={[
+            {color: theme.colors.textPrimary},
+            textStyles.subheadingSmall,
+          ]}>
           Sign Up Now to get started!
         </Text>
 
@@ -128,7 +138,8 @@ const LoginScreen = ({navigation}) => {
           </AppButton>
         </View>
 
-        <Text style={textStyles.bodyTextSmall}>
+        <Text
+          style={[{color: theme.colors.textPrimary}, textStyles.bodyTextSmall]}>
           Have an account?{' '}
           <Text
             style={{color: theme.colors.primary}}

@@ -48,8 +48,18 @@ const HeaderContainer = ({
       <IconButton onPress={() => navigation.navigate('Home')} />
       <View style={styles.contentContainer}>
         <View style={styles.textContainer}>
-          <Text style={{...textStyles.headingMedium}}>Thermocooler</Text>
-          <Text style={{...textStyles.subheadingSmall}}>
+          <Text
+            style={[
+              {color: theme.colors.textPrimary},
+              textStyles.headingMedium,
+            ]}>
+            Thermocooler
+          </Text>
+          <Text
+            style={[
+              {color: theme.colors.textPrimary},
+              textStyles.subheadingSmall,
+            ]}>
             {thermocoolerName}
           </Text>
         </View>

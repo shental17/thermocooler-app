@@ -169,7 +169,13 @@ const ProfileScreen = ({navigation}) => {
             </TouchableOpacity>
           ) : (
             <View style={styles.headerLeft}>
-              <Text style={textStyles.mainHeadingSmall}>Profile</Text>
+              <Text
+                style={[
+                  {color: theme.colors.textPrimary},
+                  textStyles.mainHeadingSmall,
+                ]}>
+                Profile
+              </Text>
             </View>
           )}
 

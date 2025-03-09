@@ -10,16 +10,18 @@ const TemperatureControl = ({
   minTemperature,
   maxTemperature,
   disabled = false,
+  onTemperatureChange,
 }) => {
   const theme = useTheme();
-  const [targetTemperature, setTargetTemperature] = useState(temperature);
 
   const handleIncrease = () => {
-    setTargetTemperature(prevTemp => Math.min(prevTemp + 1, maxTemperature));
+    const newTemp = Math.min(temperature + 1, maxTemperature);
+    onTemperatureChange(newTemp);
   };
 
   const handleDecrease = () => {
-    setTargetTemperature(prevTemp => Math.max(prevTemp - 1, minTemperature));
+    const newTemp = Math.max(temperature - 1, minTemperature);
+    onTemperatureChange(newTemp);
   };
 
   const textColor = disabled ? theme.colors.textPrimary : theme.colors.selected;
@@ -40,7 +42,7 @@ const TemperatureControl = ({
     <>
       <Text style={styles.text}>Set Temperature</Text>
       <TemperatureControlCircle
-        temperature={targetTemperature}
+        temperature={temperature}
         minTemperature={minTemperature}
         maxTemperature={maxTemperature}
         disabled={disabled}
@@ -48,12 +50,12 @@ const TemperatureControl = ({
       <View style={styles.buttonContainer}>
         <TemperatureButton
           onPress={handleDecrease}
-          disabled={disabled || targetTemperature <= minTemperature}
+          disabled={disabled || temperature <= minTemperature}
           icon="minus"
         />
         <TemperatureButton
           onPress={handleIncrease}
-          disabled={disabled || targetTemperature >= maxTemperature}
+          disabled={disabled || temperature >= maxTemperature}
           icon="plus"
         />
       </View>

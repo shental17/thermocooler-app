@@ -57,7 +57,7 @@ const getThermocooler = async (req, res) => {
     res.status(200).json({
       name: thermocooler.name,
       roomImage: thermocooler.roomImage,
-      powerstate: thermocooler.powerstate,
+      powerState: thermocooler.powerState,
       setTemperature: thermocooler.setTemperature,
       fanSpeed: thermocooler.fanSpeed,
       currentTemperature: arduinoData.currentTemperature,

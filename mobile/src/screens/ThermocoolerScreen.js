@@ -7,31 +7,67 @@ import CurrentReadingsContainer from '../components/CurrentReadingsContainer';
 import AppButton from '../components/AppButton';
 import TemperatureControl from '../components/TemperatureControl';
 import FanSpeedSlider from '../components/FanSpeedSlider';
+import {useThermocooler} from '../hooks/useThermocooler';
 
-const ThermocoolerScreen = ({navigation}) => {
+const ThermocoolerScreen = ({navigation, route}) => {
+  const {thermocoolerId} = route.params;
   const {user} = useAuthContext();
   const theme = useTheme();
-  const currentTemperature = 30;
+  const {
+    getThermocooler,
+    updatePowerState,
+    updateSetTemperature,
+    updateFanSpeed,
+    thermocoolerData,
+    isLoading,
+    error,
+    isSuccess,
+  } = useThermocooler();
   const powerUsage = 488;
-  const temperature = 20;
   const minTemperature = 18;
   const maxTemperature = 26;
-  const fanSpeedValue = 25;
+  const [name, setName] = useState(null);
+  const [currentTemperature, setCurrentTemperature] = useState(30);
   const [powerState, setPowerState] = useState(false);
+  const [temperature, setTemperature] = useState(20);
+  const [fanSpeed, setFanSpeed] = useState(25);
 
-  const handlePowerChange = newState => {
+  const handlePowerChange = async newState => {
     setPowerState(newState); // Update power state
+    await updatePowerState(thermocoolerId, newState);
   };
 
-  useEffect(() => {
-    console.log('Updated Power State: ' + powerState);
-  }, [powerState]); // This will run when powerState changes
+  const handleTemperatureChange = async newTemperature => {
+    setTemperature(newTemperature);
+    await updateSetTemperature(thermocoolerId, newTemperature);
+  };
+
+  // Handle fan speed change
+  const handleFanSpeedChange = async newFanSpeed => {
+    setFanSpeed(newFanSpeed);
+    await updateFanSpeed(thermocoolerId, newFanSpeed[0]);
+  };
 
   useEffect(() => {
     if (!user) {
       navigation.navigate('Auth');
     }
   }, [user, navigation]);
+
+  // Fetch thermocooler data when the screen loads
+  useEffect(() => {
+    getThermocooler(thermocoolerId);
+  }, []);
+
+  useEffect(() => {
+    if (thermocoolerData) {
+      setName(thermocoolerData.name);
+      setCurrentTemperature(thermocoolerData.currentTemperature);
+      setPowerState(thermocoolerData.powerState);
+      setTemperature(thermocoolerData.setTemperature);
+      setFanSpeed(thermocoolerData.fanSpeed);
+    }
+  }, [thermocoolerData]);
 
   const styles = StyleSheet.create({
     container: {
@@ -58,7 +94,7 @@ const ThermocoolerScreen = ({navigation}) => {
   return (
     <View style={styles.container}>
       <HeaderContainer
-        thermocoolerName="Living Room"
+        thermocoolerName={name}
         navigation={navigation}
         powerState={powerState}
         onPowerChange={handlePowerChange}
@@ -74,16 +110,17 @@ const ThermocoolerScreen = ({navigation}) => {
           minTemperature={minTemperature}
           maxTemperature={maxTemperature}
           disabled={!powerState}
+          onTemperatureChange={handleTemperatureChange}
         />
-        <FanSpeedSlider fanSpeedValue={fanSpeedValue} disabled={!powerState} />
+        <FanSpeedSlider
+          fanSpeedValue={fanSpeed}
+          disabled={!powerState}
+          onChange={handleFanSpeedChange}
+        />
         <AppButton onPress={() => navigation.navigate('Home')}>
           Go to Home Screen
         </AppButton>
       </View>
-      {/* <Text style={textStyles.headerText}>Thermocooler Screen</Text>
-      <Text style={textStyles.bodyText}>
-        This is a simple thermocooler screen. You can add more components here.
-      </Text> */}
     </View>
   );
 };

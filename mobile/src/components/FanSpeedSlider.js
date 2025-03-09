@@ -1,14 +1,24 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {Slider} from '@miblanchard/react-native-slider';
 import {useTheme} from '../hooks/useTheme';
 import textStyles from '../styles/textStyle';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const FanSpeedSlider = ({fanSpeedValue, disabled = false}) => {
+const FanSpeedSlider = ({fanSpeedValue, onChange, disabled = false}) => {
   const [value, setValue] = useState(fanSpeedValue); // Initial slider value
   const theme = useTheme();
-  console.log('value:' + value);
+
+  useEffect(() => {
+    setValue(fanSpeedValue); // Update local state when fanSpeedValue prop changes
+  }, [fanSpeedValue]);
+
+  const handleValueChange = newValue => {
+    setValue(newValue); // Update local state
+    if (onChange) {
+      onChange(newValue); // Pass the value to the parent component
+    }
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -30,9 +40,11 @@ const FanSpeedSlider = ({fanSpeedValue, disabled = false}) => {
       backgroundColor: theme.colors.toggleContainer,
     },
     label: {
+      color: theme.colors.textPrimary,
       ...textStyles.headingSmall,
     },
     fanSpeedLabel: {
+      color: theme.colors.textPrimary,
       ...textStyles.subheadingSmall,
     },
     labelContainer: {
@@ -66,7 +78,7 @@ const FanSpeedSlider = ({fanSpeedValue, disabled = false}) => {
         maximumValue={100}
         step={1}
         value={value}
-        onValueChange={setValue}
+        onValueChange={handleValueChange}
         minimumTrackTintColor={
           disabled ? theme.colors.textSecondary : theme.colors.selected
         }

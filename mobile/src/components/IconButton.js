@@ -6,9 +6,11 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 const IconButton = ({
   isNavButton = true,
   icon = 'arrow-left',
+  size = 18,
   isSelected = false,
   onPress,
   disabled = false,
+  border = false,
 }) => {
   const theme = useTheme();
 
@@ -35,6 +37,7 @@ const IconButton = ({
       style={[
         styles.button,
         !isNavButton && styles.powerButton,
+        border && {borderWidth: 1, borderColor: textColor},
         {
           borderRadius: theme.spacing.spacingXlg,
           padding: theme.spacing.spacingMd,
@@ -44,7 +47,7 @@ const IconButton = ({
         },
       ]}
       disabled={disabled}>
-      {icon && <Icon name={icon} size={18} color={textColor} />}
+      {icon && <Icon name={icon} size={size} color={textColor} />}
     </TouchableOpacity>
   );
 };
