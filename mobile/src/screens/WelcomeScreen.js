@@ -31,6 +31,7 @@ export default function WelcomeScreen({navigation}) {
     },
     title: {
       marginBottom: theme.spacing.spacingLg,
+      color: theme.colors.textPrimary,
     },
     buttonContainer: {
       gap: theme.spacing.spacingXlg,
@@ -41,7 +42,7 @@ export default function WelcomeScreen({navigation}) {
 
   let imageSource;
   switch (theme.homeImageUrl) {
-    case './assets/homeDark.png':
+    case '../assets/homeDark.png':
       imageSource = homeDarkImage;
       break;
     default:

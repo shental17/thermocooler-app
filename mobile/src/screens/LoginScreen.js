@@ -36,6 +36,7 @@ const LoginScreen = ({navigation}) => {
     },
     title: {
       marginBottom: theme.spacing.spacingSm,
+      color: theme.colors.textPrimary,
     },
     buttonContainer: {
       gap: theme.spacing.spacingSm,

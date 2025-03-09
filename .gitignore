@@ -46,3 +46,5 @@ ios/Pods/
 *.ino.*
 *.hex
 *.bin
+backend/pythonScripts/.env
+firmware/thermocooler-app/main/Config.h
