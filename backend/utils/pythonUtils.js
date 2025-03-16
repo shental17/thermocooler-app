@@ -1,4 +1,4 @@
-const { PythonShell } = require("python-shell");
+const { exec } = require("child_process");
 const path = require("path");
 
 const controlPlugPowerState = (powerState) => {
@@ -7,45 +7,56 @@ const controlPlugPowerState = (powerState) => {
       __dirname,
       "../pythonScripts/controlPlugPowerState.py"
     );
-    const options = {
-      args: [powerState ? "on" : "off"], // Pass the powerState to the Python script
-    };
 
-    PythonShell.run(pythonPowerStatePath, options, (err, results) => {
-      if (err) {
-        reject(`Error executing Python script: ${err}`);
-      } else {
-        resolve(results);
+    // Use `sudo` to run the script
+    exec(
+      `sudo python3 ${pythonPowerStatePath} ${powerState ? "on" : "off"}`,
+      (err, stdout, stderr) => {
+        if (err) {
+          reject(`Error executing Python script: ${stderr || err.message}`);
+        } else {
+          resolve(stdout.trim()); // Return script output
+        }
       }
-    });
+    );
   });
 };
 
 const getPlugEnergyUsage = () => {
-  const pythonEnergyUsagePath = path.resolve(
-    __dirname,
-    "../pythonScripts/getPlugEnergyUsage.py"
-  );
+  return new Promise((resolve, reject) => {
+    const pythonEnergyUsagePath = path.resolve(
+      __dirname,
+      "../pythonScripts/getPlugEnergyUsage.py"
+    );
 
-  console.log("Getting plug energy usage...");
+    console.log("Getting plug energy usage...");
 
-  // Run the Python script
-  PythonShell.run(pythonEnergyUsagePath, null).then((messages) => {
-    // results is an array consisting of messages collected during execution
-    console.log("results: %j", messages[6]);
-    const rawMessage = messages[messages.length - 1];
-    console.log("energyUsageData in String Format: %j", rawMessage);
-    const cleanedMessage = rawMessage
-      .replace(/'/g, '"') // Replace single quotes with double quotes
-      .trim(); // Remove any extra spaces
-    console.log("energyUsageData in cleaned Format: %j", cleanedMessage);
-    try {
-      const energyData = JSON.parse(cleanedMessage);
-      console.log("Parsed energy usage data:", energyData);
-      return energyData;
-    } catch (parseError) {
-      console.error("Error parsing energy usage data:", parseError);
-    }
+    // Run the Python script with sudo
+    exec(`sudo python3 ${pythonEnergyUsagePath}`, (error, stdout, stderr) => {
+      if (error) {
+        reject(`Error executing Python script: ${error.message}`);
+        return;
+      }
+
+      if (stderr) {
+        console.error(`Python script stderr: ${stderr}`);
+      }
+
+      if (!stdout.trim()) {
+        reject("No output from Python script.");
+        return;
+      }
+
+      console.log("Raw script output:", stdout);
+
+      try {
+        const energyData = JSON.parse(stdout.trim());
+        console.log("Parsed energy usage data:", energyData);
+        resolve(energyData);
+      } catch (parseError) {
+        reject(`Error parsing energy usage data: ${parseError.message}`);
+      }
+    });
   });
 };
 

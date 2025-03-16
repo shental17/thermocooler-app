@@ -9,6 +9,7 @@ const {
   updatePowerState,
   updateSetTemperature,
   updateFanSpeed,
+  getCurrentTemperature,
 } = require("../controllers/thermoController");
 
 const router = express.Router();
@@ -30,6 +31,9 @@ router.post("/", addThermocooler);
 
 // DELETE a thermocooler by ID
 router.delete("/:id", deleteThermocooler);
+
+// GET current temperature of a single thermocooler by ID
+router.get("/:id/current-temperature", getCurrentTemperature);
 
 // PATCH the power state of a specific thermocooler (ON/OFF)
 router.patch("/:id/power", updatePowerState);

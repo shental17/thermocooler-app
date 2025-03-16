@@ -6,6 +6,8 @@ const mongoose = require("mongoose");
 const http = require("http");
 const { Server } = require("socket.io");
 
+const energyScheduleUtils = require("./utils/energyScheduleUtils");
+
 const authRoutes = require("./routes/authRoutes");
 const thermocoolerRoutes = require("./routes/thermoRoutes");
 const profileRoutes = require("./routes/profileRoutes");

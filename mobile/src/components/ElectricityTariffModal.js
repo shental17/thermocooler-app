@@ -13,17 +13,42 @@ import AppInput from './AppInput';
 
 const ElectricityTariffModal = ({visible, onClose, onSave, tariff = 0}) => {
   const theme = useTheme();
-  const [tariffValue, setTariffValue] = useState(tariff || '');
+  const [tariffValue, setTariffValue] = useState('$0.00');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setTariffValue(tariff?.toString() || ''); // Update input when prop changes
+    setTariffValue(formatTariff(tariff));
   }, [tariff]);
+
+  // Function to format input correctly
+  const formatTariff = value => {
+    let numericValue = parseFloat(value);
+    if (isNaN(numericValue)) {
+      numericValue = 0.0;
+    }
+    return `$${numericValue.toFixed(2)}`;
+  };
+
+  const handleTariffChange = text => {
+    // Remove any non-numeric characters except for a single decimal point
+    let numericValue = text.replace(/[^0-9.]/g, '');
+
+    // Prevent multiple decimal points
+    const parts = numericValue.split('.');
+    if (parts.length > 2) {
+      return; // If there are multiple decimals, ignore this change
+    }
+
+    // Ensure a dollar sign is always present
+    setTariffValue(`$${numericValue}`);
+  };
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      await onSave(Number(tariffValue)); // Save new tariff to backend
+      // Remove dollar sign and convert to number
+      const tariffNumber = parseFloat(tariffValue.replace('$', '')).toFixed(2);
+      await onSave(tariffNumber); // Save to backend
     } catch (error) {
       console.error('Error updating tariff:', error);
     }
@@ -92,7 +117,7 @@ const ElectricityTariffModal = ({visible, onClose, onSave, tariff = 0}) => {
             <Text style={styles.title}>Electricity Tariff</Text>
             <AppInput
               value={tariffValue}
-              onChangeText={setTariffValue}
+              onChangeText={handleTariffChange}
               keyboardType="numeric"
             />
           </View>

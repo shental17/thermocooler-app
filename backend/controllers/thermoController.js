@@ -2,9 +2,26 @@ const mongoose = require("mongoose");
 const User = require("../models/userModel");
 const Thermocooler = require("../models/thermocoolerModel");
 const Energy = require("../models/energyModel");
-const { controlPlugPowerState } = require("../utils/pythonUtils");
+const {
+  controlPlugPowerState,
+  getPlugEnergyUsage,
+} = require("../utils/pythonUtils");
 
 // GET all thermocoolers for the authenticated user
+function isValidMacAddress(macAddress) {
+  const macRegex = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
+  return macRegex.test(macAddress);
+}
+
+async function fetchPowerUsage() {
+  try {
+    const data = await getPlugEnergyUsage();
+    return data.current_power / 1000; // Convert to kW
+  } catch (error) {
+    console.error("Error fetching power usage:", error);
+    return 0; // Return 0 in case of an error
+  }
+}
 
 const getAllThermocoolers = async (req, res) => {
   try {
@@ -32,39 +49,80 @@ const getAllThermocoolers = async (req, res) => {
 const getThermocooler = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
-    const thermocooler = await Thermocooler.findById(id);
+    console.log("Fetching Thermocooler ID:", id);
 
+    let powerUsage = 0;
+    let latestSensorData = {};
+
+    const thermocooler = await Thermocooler.findById(id);
     if (!thermocooler) {
       return res.status(404).json({ error: "Thermocooler not found." });
     }
+
     const io = req.app.get("io");
-    console.log("Io Get");
+    const esp32Address = thermocooler.esp32Address;
+    console.log("ESP32 Address from DB:", esp32Address);
 
-    io.emit("getThermocooler", {
-      powerstate: thermocooler.powerstate,
-      setTemperature: thermocooler.setTemperature,
-      fanSpeed: thermocooler.fanSpeed,
-    });
-    console.log(`ESP32 Command: Get Thermocooler Readings`);
-
-    // Fetch real-time data from Arduino (mocking this for now)
-    const arduinoData = {
-      currentTemperature: 22.5, // Replace with Arduino real-time data
-      powerUsage: 50, // Replace with Arduino real-time data
-    };
-
-    res.status(200).json({
+    // Prepare base response data
+    const responseData = {
       name: thermocooler.name,
       roomImage: thermocooler.roomImage,
       powerState: thermocooler.powerState,
       setTemperature: thermocooler.setTemperature,
       fanSpeed: thermocooler.fanSpeed,
-      currentTemperature: arduinoData.currentTemperature,
-      powerUsage: arduinoData.powerUsage,
+      powerUsage: 0, // Default
+      currentTemperature: null,
+    };
+
+    // Check if the device is online
+    if (!io.deviceRegistry || !io.deviceRegistry[esp32Address]) {
+      responseData.error =
+        "The thermocooler is currently not online. Please check your connection.";
+      return res.status(200).json(responseData);
+    }
+
+    // Device is online, get its client ID
+    const targetClientId = io.deviceRegistry[esp32Address];
+    console.log("Target Client ID:", targetClientId);
+
+    // Emit event to request real-time sensor data
+    console.log("Requesting data from ESP32...");
+    io.to(targetClientId).emit("getThermocooler", {
+      powerState: thermocooler.powerState,
+      setTemperature: thermocooler.setTemperature,
+      fanSpeed: thermocooler.fanSpeed,
     });
+
+    // Wait for ESP32 response (max 5 seconds)
+    latestSensorData = await new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        console.warn("ESP32 response timeout. Using last known data.");
+        resolve(io.sensorData?.[esp32Address] || {});
+      }, 5000); // 5 seconds timeout
+
+      io.once(`thermocoolerData:${esp32Address}`, (data) => {
+        clearTimeout(timeout);
+        resolve(data);
+      });
+    });
+
+    console.log("Received sensor data:", latestSensorData);
+
+    // Fetch power usage
+    try {
+      powerUsage = await fetchPowerUsage();
+    } catch (error) {
+      console.error("Error getting energy usage:", error);
+    }
+
+    // Add real-time data to response
+    responseData.powerUsage = powerUsage;
+    responseData.currentTemperature = latestSensorData.humiditySensor2 || null;
+
+    console.log("Final Response Data:", responseData);
+    return res.status(200).json(responseData);
   } catch (error) {
-    // Handle errors gracefully
+    console.error("Error fetching thermocooler data:", error);
     res.status(500).json({ error: "Failed to fetch single thermocooler." });
   }
 };
@@ -92,6 +150,10 @@ const addThermocooler = async (req, res) => {
     // Check if user is authenticated
     if (!req.user || !req.user._id) {
       return res.status(401).json({ error: "User not authenticated." });
+    }
+
+    if (!isValidMacAddress(esp32Address)) {
+      return res.status(404).json({ error: "ESP32 Mac Address is not valid." });
     }
 
     const userId = req.user._id; // Get the user ID from the authenticated user
@@ -167,10 +229,56 @@ const deleteThermocooler = async (req, res) => {
   }
 };
 
+// GET current temperature of single thermocooler for authenticated user
+const getCurrentTemperature = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("Fetching Thermocooler ID:", id);
+
+    const thermocooler = await Thermocooler.findById(id);
+    if (!thermocooler) {
+      return res.status(404).json({ error: "Thermocooler not found." });
+    }
+
+    const io = req.app.get("io");
+    if (!io) {
+      return res.status(500).json({ error: "Socket.IO not initialized." });
+    }
+
+    const esp32Address = thermocooler.esp32Address;
+    console.log("ESP32 Address from DB:", esp32Address);
+
+    // Wait for ESP32 response (max 5 seconds)
+    const latestSensorData = await new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        console.warn("ESP32 response timeout. Using last known data.");
+        resolve(io.sensorData?.[esp32Address] || {}); // Fixed possible crash
+      }, 5000); // 5 seconds timeout
+
+      io.once(`thermocoolerData:${esp32Address}`, (data) => {
+        clearTimeout(timeout);
+        resolve(data);
+      });
+    });
+
+    // Use correct sensor key
+    const currentTemperature = latestSensorData.humiditySensor2 || null;
+
+    return res.status(200).json({ currentTemperature });
+  } catch (error) {
+    console.error("Error fetching thermocooler current temperature:", error);
+    res.status(500).json({
+      error: "Failed to fetch current temperature of single thermocooler.",
+    });
+  }
+};
+
 const updatePowerState = async (req, res) => {
   try {
     const { id } = req.params; // Thermocooler ID from route parameters
     const { powerState } = req.body; // New power state from the request body
+
+    let powerUsage;
 
     // Validate thermocooler ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -184,43 +292,65 @@ const updatePowerState = async (req, res) => {
       });
     }
 
-    // Check if thermocooler exists and update the power state in the database
-    const thermocooler = await Thermocooler.findByIdAndUpdate(
-      id,
-      { powerState },
-      { new: true }
-    );
-
+    // Check if thermocooler exists
+    const thermocooler = await Thermocooler.findById(id);
     if (!thermocooler) {
       return res.status(404).json({ error: "Thermocooler not found." });
     }
-    console.log("Found MongoThermocooler");
-    const io = req.app.get("io");
-    console.log("Io Get");
 
-    io.emit("updatePowerState", { powerState: powerState });
+    const io = req.app.get("io");
+    const esp32Address = thermocooler.esp32Address;
+    const targetClientId = io.deviceRegistry[esp32Address];
+
+    // Check if the ESP32 device is connected
+    if (!targetClientId) {
+      return res.status(400).json({
+        error: `Thermocooler is not connected. Please ensure the device is connected before updating power state.`,
+      });
+    }
+
+    // Update power state in the database
+    thermocooler.powerState = powerState;
+    await thermocooler.save();
+
+    // // Emit power state change to ESP32
+    // io.to(targetClientId).emit("updatePowerState", { powerState });
     console.log(
       `ESP32 Command: Turn thermocooler ${powerState ? "ON" : "OFF"}`
     );
 
-    //Smart Plug Control
-    console.log("Running control Power Plug Python Script...");
-    controlPlugPowerState(powerState)
-      .then(() => {
-        console.log("Power State Changed!");
-      })
-      .catch((error) => {
-        console.error("Failed to change power state", error);
-      });
-    console.log("Python script Done.");
+    console.log(
+      "Thermcoooler PowerState before controlPlugPowerState is: " + powerState
+    );
+
+    try {
+      await controlPlugPowerState(powerState);
+      console.log("Power state successfully updated.");
+    } catch (error) {
+      console.error("Error controlling plug power state:", error);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 5000)); // 500ms delay
+
+    try {
+      powerUsage = await fetchPowerUsage();
+      console.log(
+        `Power Usage after ${powerState ? "ON" : "OFF"}: ${powerUsage}W`
+      );
+    } catch (error) {
+      console.error("Error getting energy usage:", error);
+      powerUsage = 0;
+    }
 
     res.status(200).json({
       message: `Thermocooler power state updated to ${
         powerState ? "ON" : "OFF"
       }.`,
       thermocooler,
+      powerUsage,
     });
   } catch (error) {
+    console.error("Error updating power state:", error);
     res.status(500).json({ error: "Failed to update power state." });
   }
 };
@@ -229,6 +359,8 @@ const updateSetTemperature = async (req, res) => {
   try {
     const { id } = req.params; // Thermocooler ID from the route parameters
     const { setTemperature } = req.body; // Desired temperature from the request body
+
+    let powerUsage;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: "Invalid thermocooler ID." });
@@ -254,24 +386,22 @@ const updateSetTemperature = async (req, res) => {
       return res.status(404).json({ error: "Thermocooler not found." });
     }
 
-    // Send command to Arduino
-    try {
-      // Replace this with actual Arduino communication logic
-      console.log(`Arduino Command: Set temperature to ${setTemperature}°C`);
-      // Example: await sendCommandToArduino(id, setTemperature);
-    } catch (arduinoError) {
-      // Log the Arduino error
-      console.error("Arduino communication failed:", arduinoError.message);
+    await new Promise((resolve) => setTimeout(resolve, 5000)); // 500ms delay
 
-      // Return an error response but do not rollback database changes
-      return res
-        .status(500)
-        .json({ error: "Failed to communicate with Arduino." });
+    try {
+      powerUsage = await fetchPowerUsage();
+      console.log(
+        `Power Usage after updating thermocooler temperature set to ${setTemperature}°C: ${powerUsage}W`
+      );
+    } catch (error) {
+      console.error("Error getting energy usage:", error);
+      powerUsage = 0;
     }
 
     res.status(200).json({
       message: `Thermocooler temperature set to ${setTemperature}°C successfully.`,
       thermocooler,
+      powerUsage: powerUsage,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to update set temperature." });
@@ -293,24 +423,45 @@ const updateFanSpeed = async (req, res) => {
       });
     }
 
-    const thermocooler = await Thermocooler.findByIdAndUpdate(
-      id,
-      { fanSpeed },
-      { new: true }
-    );
+    const thermocooler = await Thermocooler.findById(id);
 
     if (!thermocooler) {
       return res.status(404).json({ error: "Thermocooler not found." });
     }
+
     const io = req.app.get("io");
     console.log("Io Get");
+    const esp32Address = thermocooler.esp32Address;
+    const targetClientId = io.deviceRegistry[esp32Address];
 
-    io.emit("updateFanSpeed", { fanSpeed: fanSpeed });
+    if (!targetClientId) {
+      return res.status(400).json({
+        error: `Thermocooler is not connected. Please ensure the device is connected before updating fan speed.`,
+      });
+    }
+
+    // Update power state in the database
+    thermocooler.fanSpeed = fanSpeed;
+    await thermocooler.save();
+
+    io.to(targetClientId).emit("updateFanSpeed", { fanSpeed: fanSpeed });
     console.log(`ESP32 Command: Update fan speed updated to ${fanSpeed}%.`);
+    await new Promise((resolve) => setTimeout(resolve, 5000)); // 500ms delay
+
+    try {
+      powerUsage = await fetchPowerUsage();
+      console.log(
+        `Power Usage after updating fan speed to ${fanSpeed}%: ${powerUsage}W`
+      );
+    } catch (error) {
+      console.error("Error getting energy usage:", error);
+      powerUsage = 0;
+    }
 
     res.status(200).json({
       message: `Fan speed updated to ${fanSpeed}% successfully.`,
       thermocooler,
+      powerUsage: powerUsage,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to update fan speed." });
@@ -322,6 +473,7 @@ module.exports = {
   getThermocooler,
   addThermocooler,
   deleteThermocooler,
+  getCurrentTemperature,
   updatePowerState,
   updateSetTemperature,
   updateFanSpeed,

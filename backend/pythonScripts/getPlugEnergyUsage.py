@@ -1,13 +1,14 @@
 from PyP100 import PyP110  # Import P110 class
-import time
 import sys
+import json
 from dotenv import load_dotenv
 import os
+import time
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Get environment variables
+# Retrieve the sensitive information from environment variables
 ip_address = os.getenv("IP_ADDRESS")  
 email = os.getenv("EMAIL")  
 password = os.getenv("PASSWORD")  
@@ -16,17 +17,12 @@ if not ip_address or not email or not password:
     sys.stderr.write("Error: Missing required configuration in .env file.\n")
     sys.exit(1)
 
-power_state = sys.argv[1]  # 'on' or 'off'
-
+# Initialize P110 plug connection
 sys.stderr.write("Initializing P110 plug connection...\n")
 
 p110 = PyP110.P110(ip_address, email, password)
 
-# Retry logic
-max_retries = 3
-retry_delay = 30  # seconds
-
-for attempt in range(max_retries):
+for attempt in range(3):
     try:
         # Perform handshake
         sys.stderr.write("Performing handshake...\n")
@@ -39,22 +35,22 @@ for attempt in range(max_retries):
         sys.stderr.write("Login successful.\n")
         break
     except Exception as e:
-        sys.stderr.write(f"Failed to initialize plug connection. Attempt {attempt + 1}/{max_retries}: {e}\n")
-        if attempt < max_retries - 1:
-            sys.stderr.write(f"Retrying in {retry_delay} seconds...\n")
-            time.sleep(retry_delay)
+        sys.stderr.write(f"Failed to initialize plug connection. Attempt {attempt + 1}/3\n")
+        if attempt < 2:
+            sys.stderr.write("Retrying in 5 seconds...\n")
+            time.sleep(5)
         else:
             sys.stderr.write("Failed to initialize plug connection after 3 attempts.\n")
             sys.exit(1)
 
-if power_state == "on":
-    sys.stderr.write("Turning plug ON...\n")
-    p110.turnOn()
-elif power_state == "off":
-    sys.stderr.write("Turning plug OFF...\n")
-    p110.turnOff()
-else:
-    sys.stderr.write("Invalid power state argument. Use 'on' or 'off'.\n")
-    sys.exit(1)
+# Get energy usage
+sys.stderr.write("Fetching energy usage...\n")
+energy_usage = p110.getEnergyUsage()
 
-sys.stderr.write(f"Plug state toggled to {power_state.upper()} successfully!\n")
+if energy_usage:
+    sys.stderr.write("Energy usage retrieved successfully.\n")
+    print(json.dumps(energy_usage))  # Only print JSON to stdout
+    sys.stdout.flush()
+else:
+    sys.stderr.write("Failed to retrieve energy usage.\n")
+    sys.exit(1)

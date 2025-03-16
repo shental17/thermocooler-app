@@ -35,6 +35,9 @@ export const useThermocooler = () => {
         console.log('Response is not okay: ', error);
         return;
       }
+      if (json.error) {
+        setError(json.error);
+      }
       setThermocoolerData(json);
       console.log('Thermocooler Data:', json);
       setIsLoading(false);
@@ -42,6 +45,53 @@ export const useThermocooler = () => {
     } catch (error) {
       setIsLoading(false);
       setError('An error occurred. Please try again.');
+    }
+  };
+
+  const getCurrentTemperature = async thermocoolerId => {
+    setIsLoading(true);
+    setError(null);
+    setIsSuccess(false);
+
+    try {
+      const token = user.token;
+
+      if (!token) {
+        setIsLoading(false);
+        setError('Token is missing. Please log in.');
+        return;
+      }
+
+      console.log('Token:', token);
+      const response = await fetch(
+        `${API_URL}/${thermocoolerId}/current-temperature`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Add the token for authentication
+          },
+        },
+      );
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        setError(json.error || 'An error occurred. Please try again.');
+        console.log('Response error: ', json.error || 'An error occurred.');
+        return;
+      }
+
+      setThermocoolerData(prev => ({
+        ...prev,
+        currentTemperature: json.currentTemperature,
+      }));
+      setIsSuccess(true);
+    } catch (error) {
+      console.error('Error fetching temperature:', error); // Log the error
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false); // Set loading state to false at the end
     }
   };
 
@@ -72,7 +122,11 @@ export const useThermocooler = () => {
         console.log('Response is not okay: ', error);
         return;
       }
-      setThermocoolerData(prev => ({...prev, powerState}));
+      setThermocoolerData(prev => ({
+        ...prev,
+        powerState,
+        powerUsage: json.powerUsage,
+      }));
       setIsLoading(false);
       setIsSuccess(true);
     } catch (error) {
@@ -108,7 +162,11 @@ export const useThermocooler = () => {
         console.log('Response is not okay: ', error);
         return;
       }
-      setThermocoolerData(prev => ({...prev, fanSpeed}));
+      setThermocoolerData(prev => ({
+        ...prev,
+        fanSpeed,
+        powerUsage: json.powerUsage,
+      }));
       setIsLoading(false);
       setIsSuccess(true);
     } catch (error) {
@@ -145,7 +203,11 @@ export const useThermocooler = () => {
         console.log('Response is not okay: ', error);
         return;
       }
-      setThermocoolerData(prev => ({...prev, setTemperature}));
+      setThermocoolerData(prev => ({
+        ...prev,
+        setTemperature,
+        powerUsage: json.powerUsage,
+      }));
       setIsLoading(false);
       setIsSuccess(true);
     } catch (error) {
@@ -156,6 +218,7 @@ export const useThermocooler = () => {
 
   return {
     getThermocooler,
+    getCurrentTemperature,
     updatePowerState,
     updateSetTemperature,
     updateFanSpeed,

@@ -6,6 +6,7 @@ import {
   Image,
   SafeAreaView,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import {useTheme} from '../hooks/useTheme';
 import textStyles from '../styles/textStyle';
@@ -26,16 +27,16 @@ const HomeScreen = ({navigation}) => {
     isSuccess,
   } = useThermocoolerList();
   const [allThermocoolersData, setAllThermocoolersData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      navigation.navigate('Auth');
+    if (user === null) {
+      navigation.navigate('Auth'); // Navigate if no user
+    } else {
+      setLoading(false); // Set loading to false when user is available
+      getAllThermocooler(); // Fetch thermocoolers only after user is authenticated
     }
   }, [user, navigation]);
-
-  useEffect(() => {
-    getAllThermocooler();
-  }, [user]);
 
   useEffect(() => {
     if (allThermocoolerData) {
@@ -112,17 +113,30 @@ const HomeScreen = ({navigation}) => {
     },
   });
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
         <Image
           source={{
-            uri: user.profilePicture || 'https://via.placeholder.com/100',
+            uri:
+              user && user.profilePicture
+                ? user.profilePicture
+                : 'https://via.placeholder.com/100',
           }}
           style={styles.profileImage}
         />
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerMainText}>Hello, {user.username}</Text>
+          <Text style={styles.headerMainText}>
+            Hello, {user ? user.username : ''}
+          </Text>
           <Text style={styles.headerSubText}>{getGreeting()}</Text>
         </View>
         <IconButton

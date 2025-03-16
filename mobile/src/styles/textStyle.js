@@ -5,6 +5,13 @@ const {width} = Dimensions.get('window');
 const scale = width / 375; // 375 is considered the base width for design
 
 const textStyles = StyleSheet.create({
+  captionText: {
+    fontFamily: 'SF Pro Display',
+    fontSize: 9 * scale,
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 12 * scale,
+  },
   smallText: {
     fontFamily: 'SF Pro Display',
     fontSize: 11 * scale,

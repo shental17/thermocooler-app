@@ -1,18 +1,22 @@
 import {useState} from 'react';
 import {useAuthContext} from './useAuthContext';
 
-export const useThermocoolerList = () => {
+export const useEnergyUsage = () => {
   const {user} = useAuthContext();
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [allThermocoolerData, setAllThermocoolerData] = useState(null);
+  const [electricityTariff, setElectricityTariff] = useState(null);
+  const [todayEnergy, setTodayEnergy] = useState(null);
+  const [dailyEnergy, setDailyEnergy] = useState({});
+  const [monthlyEnergy, setMonthlyEnergy] = useState(null);
 
-  const API_URL = 'http://localhost:4000/api/thermocooler';
+  const API_URL = 'http://localhost:4000/api/energy';
 
-  const getAllThermocooler = async () => {
+  const getElectricityTariff = async () => {
     setIsLoading(true);
     setError(null);
+    setIsSuccess(false);
 
     try {
       const token = user.token;
@@ -34,16 +38,17 @@ export const useThermocoolerList = () => {
         console.log('Response is not okay: ', error);
         return;
       }
-      setAllThermocoolerData(json);
-      console.log('All Thermocooler Data:', json);
+      console.log('Response json: ' + json);
+      setElectricityTariff(json.electricityTariff);
       setIsLoading(false);
+      setIsSuccess(true);
     } catch (error) {
       setIsLoading(false);
       setError('An error occurred. Please try again.');
     }
   };
 
-  const addThermocooler = async (name, esp32Address) => {
+  const updateElectricityTariff = async electricityTariff => {
     setIsLoading(true);
     setError(null);
     setIsSuccess(false);
@@ -53,16 +58,15 @@ export const useThermocoolerList = () => {
 
       console.log('Token:', token);
       const response = await fetch(`${API_URL}/`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`, // Add the token for authentication
         },
-        body: JSON.stringify({name, esp32Address}),
+        body: JSON.stringify({electricityTariff}),
       });
 
       const json = await response.json();
-      console.log('Response:', json);
 
       if (!response.ok) {
         setIsLoading(false);
@@ -70,6 +74,7 @@ export const useThermocoolerList = () => {
         console.log('Response is not okay: ', error);
         return;
       }
+      setElectricityTariff(electricityTariff);
       setIsLoading(false);
       setIsSuccess(true);
     } catch (error) {
@@ -78,7 +83,7 @@ export const useThermocoolerList = () => {
     }
   };
 
-  const deleteThermocooler = async thermocoolerId => {
+  const getEnergyUsage = async () => {
     setIsLoading(true);
     setError(null);
     setIsSuccess(false);
@@ -86,8 +91,9 @@ export const useThermocoolerList = () => {
     try {
       const token = user.token;
 
-      const response = await fetch(`${API_URL}/${thermocoolerId}`, {
-        method: 'DELETE',
+      console.log('Token:', token);
+      const response = await fetch(`${API_URL}/usage`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`, // Add the token for authentication
@@ -95,7 +101,6 @@ export const useThermocoolerList = () => {
       });
 
       const json = await response.json();
-      console.log('Response:', json);
 
       if (!response.ok) {
         setIsLoading(false);
@@ -103,6 +108,9 @@ export const useThermocoolerList = () => {
         console.log('Response is not okay: ', error);
         return;
       }
+      setTodayEnergy(json.dailyEnergy || 0);
+      setDailyEnergy(json.weeklyEnergy);
+      setMonthlyEnergy(json.monthlyEnergy);
       setIsLoading(false);
       setIsSuccess(true);
     } catch (error) {
@@ -112,10 +120,13 @@ export const useThermocoolerList = () => {
   };
 
   return {
-    getAllThermocooler,
-    addThermocooler,
-    deleteThermocooler,
-    allThermocoolerData,
+    getElectricityTariff,
+    updateElectricityTariff,
+    getEnergyUsage,
+    electricityTariff,
+    todayEnergy,
+    dailyEnergy,
+    monthlyEnergy,
     isLoading,
     error,
     isSuccess,

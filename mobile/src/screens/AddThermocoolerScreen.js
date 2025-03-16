@@ -14,7 +14,15 @@ const AddThermocoolerScreen = ({navigation}) => {
   const theme = useTheme();
   const [esp32Address, setEsp32Address] = useState(null);
   const [thermocoolerName, setThermocoolerName] = useState('');
-  const {addThermocooler, isLoading, error, isSuccess} = useThermocoolerList();
+  const [roomNames, setRoomNames] = useState([]);
+  const {
+    getAllThermocooler,
+    addThermocooler,
+    allThermocoolerData,
+    isLoading,
+    error,
+    isSuccess,
+  } = useThermocoolerList();
 
   useEffect(() => {
     if (!user) {
@@ -30,14 +38,33 @@ const AddThermocoolerScreen = ({navigation}) => {
   }, [isSuccess, navigation]);
 
   useEffect(() => {
-    if (error) {
-      Alert.alert(error.response?.data?.error || 'Failed to add thermocooler');
+    getAllThermocooler();
+  }, [user]);
+
+  useEffect(() => {
+    if (allThermocoolerData) {
+      const roomNames = allThermocoolerData.map(tc => tc.name);
+      setRoomNames(roomNames); // Set the roomNames state
     }
-  }, [error]);
+  }, [allThermocoolerData]);
 
   const handleAddThermocooler = async () => {
     await addThermocooler(thermocoolerName, esp32Address);
   };
+
+  // Example: Filter out rooms already used by the user
+  const availableRooms = [
+    {label: 'Living Room', value: 'Living Room'},
+    {label: 'Main Bedroom', value: 'Main Bedroom'},
+    {label: 'Bedroom', value: 'Bedroom'},
+    {label: 'Office', value: 'Office'},
+    {label: 'Study', value: 'Study'},
+  ];
+
+  // Filter out rooms that the user already has
+  const filteredRooms = availableRooms.filter(
+    room => !roomNames.includes(room.value),
+  );
 
   const styles = StyleSheet.create({
     container: {
@@ -118,13 +145,7 @@ const AddThermocoolerScreen = ({navigation}) => {
           <AppSelect
             value={thermocoolerName}
             onValueChange={setThermocoolerName}
-            items={[
-              {label: 'Living Room', value: 'Living Room'},
-              {label: 'Main Bedroom', value: 'Main Bedroom'},
-              {label: 'Bedroom', value: 'Bedroom'},
-              {label: 'Office', value: 'Office'},
-              {label: 'Study', value: 'Study'},
-            ]}
+            items={filteredRooms}
             placeholder="Select Room Name"
           />
         </View>

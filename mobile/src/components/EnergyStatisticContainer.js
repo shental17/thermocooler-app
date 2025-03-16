@@ -4,9 +4,10 @@ import {useTheme} from '../hooks/useTheme';
 import textStyles from '../styles/textStyle';
 import EnergyStatisticBar from './EnergyStatisticBar';
 
-const EnergyStatisticContainer = ({}) => {
+const EnergyStatisticContainer = ({dailyEnergy}) => {
   const theme = useTheme();
-  const maxEnergy = 150;
+
+  const maxEnergy = Math.max(...Object.values(dailyEnergy), 1);
 
   const getLast7Days = () => {
     const days = [];
@@ -16,6 +17,8 @@ const EnergyStatisticContainer = ({}) => {
       const date = new Date();
       date.setUTCDate(today.getUTCDate() - i);
       date.setUTCHours(8, 0, 0, 0);
+
+      const formattedDate = date.toISOString().split('T')[0];
 
       const dayName = date
         .toLocaleDateString('en-MY', {
@@ -28,7 +31,7 @@ const EnergyStatisticContainer = ({}) => {
         timeZone: 'Asia/Kuala_Lumpur',
       });
 
-      days.push({day: dayName, date: dayDate});
+      days.push({day: dayName, date: dayDate, formattedDate});
     }
 
     return days;
@@ -66,7 +69,7 @@ const EnergyStatisticContainer = ({}) => {
         {last7Days.map((item, index) => (
           <EnergyStatisticBar
             key={index}
-            energy={Math.floor(Math.random() * maxEnergy)} // Example energy values
+            energy={dailyEnergy[item.formattedDate] || 0} // Example energy values
             maxEnergy={maxEnergy}
             date={item.date}
             day={item.day}

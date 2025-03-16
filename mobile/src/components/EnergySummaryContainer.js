@@ -73,15 +73,19 @@ const EnergySummaryContainer = ({
           <View style={styles.textContainer}>
             <Text style={styles.text}>Today</Text>
             <View style={styles.valueContainer}>
-              <Text style={styles.highlightText}>{todayEnergy}</Text>
-              <Text style={styles.text}>kMh</Text>
+              <Text style={styles.highlightText}>
+                {(todayEnergy / 1000).toFixed(3)}
+              </Text>
+              <Text style={styles.text}>kWh</Text>
             </View>
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.text}>This Month</Text>
             <View style={styles.valueContainer}>
-              <Text style={styles.highlightText}>{monthlyEnergy}</Text>
-              <Text style={styles.text}>kMh</Text>
+              <Text style={styles.highlightText}>
+                {(monthlyEnergy / 1000).toFixed(3)}
+              </Text>
+              <Text style={styles.text}>kWh</Text>
             </View>
           </View>
         </View>

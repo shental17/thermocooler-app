@@ -10,7 +10,7 @@ const EnergyStatisticBar = ({
   day = 'MON',
 }) => {
   const theme = useTheme();
-  const statsHeight = (energy / maxEnergy) * 100 + '%';
+  const statsHeight = (energy / maxEnergy) * 99 + 1 + '%';
 
   const styles = StyleSheet.create({
     container: {
@@ -37,12 +37,16 @@ const EnergyStatisticBar = ({
       ...textStyles.smallText,
       color: theme.colors.textPrimary,
     },
+    energyText: {
+      ...textStyles.captionText,
+      color: theme.colors.textPrimary,
+    },
   });
 
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
-        <Text style={styles.text}>{energy}</Text>
+        <Text style={styles.energyText}>{(energy / 1000).toFixed(3)}</Text>
         <Text style={styles.text}>kWh</Text>
       </View>
       <View style={styles.statsValueContainer}>

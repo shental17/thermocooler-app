@@ -1,21 +1,25 @@
 const express = require("express");
+const requireAuth = require("../middleware/requireAuth");
 
 // Import the controller functions
 const {
-  getDailyEnergyUsage,
-  getWeeklyEnergyUsage,
-  getMonthlyEnergyUsage,
+  getElectricityTariff,
+  updateElectricityTariff,
+  getEnergyUsage,
 } = require("../controllers/energyController");
 
 const router = express.Router();
 
-// GET the daily energy usage
-router.get("/:id/day", getDailyEnergyUsage);
+//require auth for all profile function
+router.use(requireAuth);
 
-// GET the weekly energy usage
-router.get("/:id/week", getWeeklyEnergyUsage);
+// GET the electricity Tariff
+router.get("/", getElectricityTariff);
 
-// GET the monthly energy usage
-router.get("/:id/month", getMonthlyEnergyUsage);
+// UPDATE the electricity Tariff
+router.patch("/", updateElectricityTariff);
+
+// GET overall energy usage
+router.get("/usage", getEnergyUsage);
 
 module.exports = router;

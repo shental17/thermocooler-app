@@ -19,6 +19,7 @@
     "jsonwebtoken": "^9.0.2",
     "luxon": "^3.5.0",
     "mongoose": "^8.9.2",
+    "node-cron": "^3.0.3",
     "python-shell": "^5.0.0",
     "socket.io": "^4.8.1",
     "tp-link-tapo-connect": "^2.0.7",
