@@ -46,3 +46,4 @@ ios/Pods/
 *.ino.*
 *.hex
 *.bin
+backend/pythonScripts/.env

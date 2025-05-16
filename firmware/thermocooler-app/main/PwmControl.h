@@ -1,16 +1,16 @@
-#ifndef FANSPEEDCONTROL_H
-#define FANSPEEDCONTROL_H
+#ifndef PWNCONTROL_H
+#define PWNCONTROL_H
 
 #include <Arduino.h>
 
-class FanSpeedControl {
+class PwmControl {
 public:
-    FanSpeedControl(int pin);  // Constructor
+    PwmControl(int pin);  // Constructor
     void begin();              // Setup function
     void setSpeed(int speed);  // Set fan speed (0-100%)
     
 private:
-    int fanPin;
+    int pwmPin;
     static const int freq = 25000;
     static const int resolution = 8;
 };

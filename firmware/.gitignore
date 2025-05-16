@@ -53,5 +53,3 @@ build/
 sdkconfig
 sdkconfig.old
 
-thermocooler-app/main/Config.h
-

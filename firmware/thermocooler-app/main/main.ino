@@ -9,7 +9,7 @@
 #include "TimeUtils.h"
 #include "WaterflowSensor.h"
 #include "TemperatureSensors.h"
-#include "FanSpeedControl.h"
+#include "PwmControl.h"
 #include "DHTSensors.h"
 #include "time.h"
 
@@ -30,17 +30,15 @@ const char* ntpServer = "pool.ntp.org";
 // Variable to save current epoch time
 unsigned long epochTime; 
 
-#define RELAY_PIN 16 //RELAY PIN for TEC Chips
-#define FANPIN1 14  // Pin for first FAN
-#define PUMPPIN1 15  // Pin for first PUMP sensor
+#define FANPIN 14  // Pin for first FAN
+#define PUMPPIN 15  // Pin for first PUMP sensor
 
-FanSpeedControl fan(FANPIN1);  // Fan on pin 14
-FanSpeedControl pump(PUMPPIN1); // Pump on pin 15
+PwmControl fan(FANPIN);  // Fan on pin 14
+PwmControl pump(PUMPPIN); // Pump on pin 15
 
-volatile int fanSpeedPercentage = 10;
+volatile int fanSpeedPercentage = 100;
 volatile int pumpSpeedPercentage = 100;
-volatile int setTemperature = 25;
-
+volatile int setTemperature = 14;
 
 
 void createNewSheetIfNotExists(String sheetName) {
@@ -76,7 +74,7 @@ void addHeadersIfNeeded(String sheetName) {
         "Water After Cooling Tower Temp Sensor 3 (°C)", 
         "Cold Fin Temp Sensor 4 (°C)", 
         "Flow Rate (L/min)", 
-        "Total Volume"
+        "Total Volume",
         "Ambient Humidity Sensor 1 Humidity",
         "Ambient Humidity Sensor 1 Temperature (°C)",
         "Ambient Humidity Sensor 1 Heat Index (°C)",
@@ -115,9 +113,10 @@ void tokenStatusCallback(TokenInfo info){
     }
 }
 
-String getSensorReadings() {
+String getSensorReadings(String macAddress) {
   StaticJsonDocument<256> doc;  // Allocate memory for JSON object (adjust size as needed)
 
+  doc["macAddress"] = macAddress;
   doc["ambientTemperature"] = temp1;
   doc["sensor1"] = temp1;
   doc["sensor2"] = temp2;
@@ -130,15 +129,6 @@ String getSensorReadings() {
   serializeJson(doc, jsonString);  // Convert JSON object to a string
 
   return jsonString;  // Return the JSON string
-}
-
-
-void changePowerState(boolean powerState){
-  if (powerState) {
-      digitalWrite(RELAY_PIN, HIGH);
-  } else {
-      digitalWrite(RELAY_PIN, LOW);
-  }
 }
 
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
@@ -169,16 +159,9 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
                 fanSpeedPercentage = newFanSpeedPercentage;
                 setTemperature = newSetTemperature;
                 Serial.printf("[IOc] Power state: %d\n", powerState);
-                Serial.printf("[IOc] New Set Temperature: %d\n", newSetTemperature);
+                Serial.printf("[IOc] New Set Temperature: %d\n", setTemperature);
                 Serial.printf("[IOc] New Fan Speed Percentage: %d\n", fanSpeedPercentage);
-                changePowerState(powerState);
                 fan.setSpeed(fanSpeedPercentage); 
-            }
-            // Handle updatePowerState event
-            if(eventName == "updatePowerState") {
-                bool powerState = doc[1]["powerState"];
-                Serial.printf("[IOc] Power state: %d\n", powerState);
-                changePowerState(powerState);
             }
             // Handle updateFanSpeed event
             if(eventName == "updateFanSpeed") {
@@ -188,7 +171,20 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
                 Serial.printf("[IOc] Updated Fan Speed Percentage: %d\n", fanSpeedPercentage);
                 fan.setSpeed(fanSpeedPercentage); // Corrected variable name
             }
-
+            // Handle updateFanSpeed event
+            if(eventName == "updateSetTemperature") {
+                int newSetTemperature = doc[1]["setTemperature"].as<int>();  // Correct JSON indexing
+                Serial.printf("[IOc] New Set Temperature: %d\n", newSetTemperature);
+                setTemperature = newSetTemperature;
+                Serial.printf("[IOc] Updated Set Temperature: %d\n", setTemperature);
+            }
+            // Handle updateWaterPumpSpeed event
+            if(eventName == "updateWaterPumpSpeed") {
+                int newPumpSpeedPercentage = doc[1]["waterPumpSpeed"].as<int>();  // Correct JSON indexing
+                Serial.printf("[IOc] New Water Pump Percentage: %d\n", newPumpSpeedPercentage);
+                pumpSpeedPercentage = newPumpSpeedPercentage;
+                Serial.printf("[IOc] Updated Water Pump Percentage: %d\n", pumpSpeedPercentage);
+            }
         }
             break;
         case sIOtype_ACK:
@@ -231,7 +227,6 @@ void setup() {
   socketIO.begin(SERVER_IP_ADDRESS, PORT,  "/socket.io/?EIO=4");
   socketIO.onEvent(socketIOEvent);
 
-  pinMode(RELAY_PIN, OUTPUT);
   setupWaterFlowSensor();
   setupTemperatureSensors();
   setupDHTSensors();
@@ -249,12 +244,15 @@ void loop() {
 
         FirebaseJson response;
 
+        String macAddress = getMacAddress();
+          // Send the macAddress data to the server
+        String macAddressMessage = "[\"registerDevice\", \"" + macAddress + "\"]";
+        socketIO.sendEVENT(macAddressMessage); 
+        
         Serial.println("\nAppend spreadsheet values...");
         Serial.println("----------------------------");
 
         FirebaseJson valueRange;
-
-        digitalWrite(RELAY_PIN, HIGH); // On TEC Chips
 
         // Set PWM
         fan.setSpeed(fanSpeedPercentage); 
@@ -264,7 +262,7 @@ void loop() {
         loopWaterFlowSensor();  // Get waterflow sensor readings
         loopDHTSensors();  // Get humidity sensor readings
 
-        String sensorReadings = getSensorReadings();
+        String sensorReadings = getSensorReadings(macAddress);
         // Send the sensor data to the server
         String message = "[\"sensorReadings\", " + sensorReadings + "]";
         socketIO.sendEVENT(message);
